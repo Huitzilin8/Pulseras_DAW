@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritesSpinner = document.getElementById('favoritesSpinner');
     const buildsSpinner = document.getElementById('buildsSpinner');
 
+    // Get references to the modal elements
+    const myAlertModal = new bootstrap.Modal(document.getElementById('myAlertModal'));
+    const myAlertModalLabel = document.getElementById('myAlertModalLabel');
+    const myAlertModalBody = document.getElementById('myAlertModalBody');
+
     // Function to display a bracelet item
     function renderBracelet(bracelet, listElement, type = 'favorite') {
         const itemHtml = `
