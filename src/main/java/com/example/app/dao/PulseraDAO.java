@@ -81,6 +81,24 @@ public class PulseraDAO {
         );
     }
 
+    /*
+    public List<Pulsera> findAvailableByMaxPrice(double maxPrice) {
+        List<Pulsera> list = new ArrayList<>();
+        col.find(eq("delisted", false)).forEach(d -> list.add(docToPulsera(d)));
+        list.sort();
+        return list;
+    };
+    */
+
+    public void setDelisted(ObjectId id, boolean delisted) {
+        try {
+            Optional<Pulsera> p = findById(id);
+            p.ifPresent(pulsera -> pulsera.setDelisted(delisted));
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void delete(ObjectId id) {
         col.deleteOne(eq("_id", id));
     }
