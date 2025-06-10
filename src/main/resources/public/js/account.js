@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error de conexión o inesperado al cargar favoritos:', error);
-            alert('Hubo un problema al cargar tus pulseras favoritas. Intenta de nuevo más tarde.');
+            showAlert('danger','Hubo un problema al cargar tus pulseras favoritas. Intenta de nuevo más tarde.');
         } finally {
             favoritesSpinner.classList.add('d-none');
         }
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Error del servidor:", errorData);
 
                 if (response.status === 401) {
-                    alert("No estás autenticado. Redirigiendo a login...");
+                    showAlert('danger','No estás autenticado. Redirigiendo a login...');
                     window.location.href = "/login";
                     return;
                 }
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Error en loadBuilds():", error);
-            alert("Error al cargar diseños: " + error.message); // Mostrar el error real
+            showAlert('danger',"Error al cargar diseños: " + error.message); // Mostrar el error real
         } finally {
             buildsSpinner.classList.add('d-none');
         }
@@ -108,11 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            alert(data.message);
+            showAlert('info',data.message);
             loadFavorites(); // Reload the list to show the new favorite
         } catch (error) {
             console.error('Error adding to favorites:', error);
-            alert('Error al agregar a favoritos: ' + error.message);
+            showAlert('danger','Error al agregar a favoritos: ' + error.message);
         }
     }
 
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.status === 204) { // 204 No Content for successful DELETE
-                    alert('Pulsera eliminada de favoritos.');
+                    showAlert('success','Pulsera eliminada de favoritos')
                     loadFavorites(); // Reload the list to reflect the change
                 } else if (!response.ok) {
                     const errorData = await response.json();
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error('Error removing from favorites:', error);
-                alert('Error al eliminar de favoritos: ' + error.message);
+                showAlert('danger','Error al eliminar de favoritos: ' + error.message);
             }
         }
     });
@@ -190,6 +190,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById("guestMenu").classList.remove("d-none");
                 document.getElementById("userMenu").classList.add("d-none");
             });
+    }
+
+    /**
+     * Displays a Bootstrap modal alert.
+     * @param {string} type - The type of alert (e.g., 'success', 'danger', 'info', 'warning'). This affects the modal title.
+     * @param {string} message - The message to display in the alert.
+     */
+    function showAlert(type, message, duration = 1000) {
+        // Set modal title based on type
+        switch (type) {
+            case 'success':
+                myAlertModalLabel.textContent = 'Éxito';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-success text-white';
+                break;
+            case 'danger':
+                myAlertModalLabel.textContent = 'Error';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-danger text-white';
+                break;
+            case 'info':
+                myAlertModalLabel.textContent = 'Información';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-info text-white';
+                break;
+            case 'warning':
+                myAlertModalLabel.textContent = 'Advertencia';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-warning text-dark';
+                break;
+            default:
+                myAlertModalLabel.textContent = 'Alerta';
+                myAlertModalLabel.parentElement.className = 'modal-header';
+        }
+
+        // Set modal body message
+        myAlertModalBody.textContent = message;
+
+        // Show the modal
+        myAlertModal.show();
+
+        // Set timeout to hide the modal after duration (default: 3000ms = 3 seconds)
+        setTimeout(() => {
+            myAlertModal.hide();
+        }, duration);
     }
 
     // Inicializar
