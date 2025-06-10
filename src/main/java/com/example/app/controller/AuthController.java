@@ -19,6 +19,61 @@ public class AuthController {
     public AuthController(UsuarioDAO dao) { this.dao = dao; }
 
     public void registerRoutes() {
+
+        get("/admin", (req, res) -> {
+            // Panel de administración, pendiente logica autenticación
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /admin" + RESET);
+            res.redirect("/account.html");
+            return null;
+        });
+
+        get("/account", (req, res) -> {
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /account" + RESET);
+            try {
+                // Retrieve the user from the session
+                // Assuming your 'user' attribute in the session stores a Usuario object
+                Usuario currentUser = req.session().attribute("usuario");
+
+                if (currentUser != null) {
+                    // User is authenticated.
+                    // You can optionally return JSON with user data if needed for a SPA
+                    // or just redirect as you were doing.
+                    // For now, let's keep the redirect to account.html
+                    System.out.println(INFO + "[AuthController] " + NEUTRAL + "User '" + VARIABLE + currentUser.getNombreUsuario() + NEUTRAL + "' is authenticated. Redirecting to /account.html" + RESET);
+                    res.redirect("/account.html");
+                    return null; // Important: return null after redirect to stop further processing in Spark
+                } else {
+                    // User is NOT authenticated.
+                    System.out.println(ERROR + "[AuthController] " + NEUTRAL + "Unauthenticated access to /account. Redirecting to /login.html" + RESET);
+                    // Option 1: Redirect to login page
+                    res.redirect("/login.html");
+                    return null; // Important: return null after redirect
+
+                /*
+                // Option 2: Return JSON response indicating unauthenticated status
+                // This would be more suitable for an API endpoint if the frontend
+                // handles the redirection based on the JSON response.
+                res.status(401); // Unauthorized
+                return jackson.writeValueAsString(Map.of(
+                    "success", false,
+                    "message", "Unauthorized access. Please log in.",
+                    "redirect", "/login.html" // Hint for frontend to redirect
+                ));
+                */
+                }
+            } catch (Exception e) {
+                System.err.println(ERROR + "[AuthController] Error processing /account request: " + e.getMessage() + RESET);
+                e.printStackTrace(); // Log the stack trace for debugging
+
+                // Return a 500 Internal Server Error if an unexpected error occurs
+                res.status(500);
+                return jackson.writeValueAsString(Map.of(
+                        "success", false,
+                        "message", "Internal server error while processing account request."
+                ));
+            }
+        });
+
         get("/login", (req, res) -> {
             System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /login" + RESET);
             res.redirect("/login.html");
@@ -42,7 +97,7 @@ public class AuthController {
         // En AuthController.java
         get("/api/auth/status", (req, res) -> {
             try {
-                Usuario usuario = req.session().attribute("user");
+                Usuario usuario = req.session().attribute("usuario");
                 if (usuario != null) {
                     return jackson.writeValueAsString(Map.of(
                             "authenticated", true,
@@ -91,18 +146,18 @@ public class AuthController {
                     return jackson.writeValueAsString(Map.of("success", false, "message", "Invalid credentials"));
                 }
 
-                Usuario user = opt.get();
+                Usuario usuario = opt.get();
                 boolean passwordMatch = BCrypt.verifyer().verify(
                         password.toCharArray(),
-                        user.getHashContrasena()
+                        usuario.getHashContrasena()
                 ).verified;
 
                 if (passwordMatch) {
-                    dao.update(user); // Consider if you need to update anything on login (e.g., last login time)
-                    req.session().attribute("user", user);
+                    dao.update(usuario); // Consider if you need to update anything on login (e.g., last login time)
+                    req.session().attribute("usuario", usuario);
                     res.status(200);
-                    System.out.println(SUCCESS + "[AuthController] " + NEUTRAL + "User logged in successfully: " + VARIABLE + user.getNombreUsuario() + RESET);
-                    return jackson.writeValueAsString(Map.of("success", true, "user", user));
+                    System.out.println(SUCCESS + "[AuthController] " + NEUTRAL + "User logged in successfully: " + VARIABLE + usuario.getNombreUsuario() + RESET);
+                    return jackson.writeValueAsString(Map.of("success", true, "user", usuario));
                 } else {
                     res.status(401);
                     System.out.println(ERROR + "[AuthController] " + NEUTRAL + "Invalid password for email: " + VARIABLE + email + RESET);
