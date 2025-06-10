@@ -12,7 +12,7 @@
 .gradle/
 build/
 out/
-target/
+target/*
 bin/
 .mvn/
 mvnw
