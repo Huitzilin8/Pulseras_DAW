@@ -1,3 +1,4 @@
+// File: src/main/java/com/example/app/controller/UsuarioController.java
 package com.example.app.controller;
 
 import com.example.app.dao.BuildsDAO;
@@ -174,22 +175,47 @@ public class UsuarioController {
 
         // GET the current user's custom-built bracelets
         get("/api/profile/builds", (req, res) -> {
-            // This would follow the exact same logic as GET /api/profile/favoritos,
-            // but using buildsDao and currentUser.getBuildsId()
-            res.type("application/json");
+            res.type("application/json"); // Set default content type for successful responses
+
             Usuario currentUser = req.session().attribute("usuario");
+
             if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
+                res.status(401); // Set the HTTP status code
+                // Ensure content type is set specifically for this error response
+                res.type("application/json");
+                // Return the JSON string as the response body
+                return jackson.writeValueAsString(Map.of("error", "Unauthorized", "message", "Porfavor inicia sesión para ver tus builds."));
             }
 
-            // Find the builds document, then find the actual bracelets
-            Optional<Builds> optBuild = buildsDao.findById(currentUser.getBuildsId());
-            if (optBuild.isPresent()) {
-                List<ObjectId> pulseraIds = optBuild.get().getPulserasIds();
-                List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
-                return jackson.writeValueAsString(pulseras);
+            try {
+                // Check if the user has a builds ID assigned
+                ObjectId buildsId = currentUser.getBuildsId();
+                if (buildsId == null) {
+                    // User is logged in but doesn't have a builds collection yet (e.g., new user)
+                    // Return an empty list, as there are no builds to show.
+                    return jackson.writeValueAsString(Collections.emptyList());
+                }
+
+                Optional<Builds> optBuild = buildsDao.findById(buildsId);
+
+                if (optBuild.isPresent()) {
+                    List<ObjectId> pulseraIds = optBuild.get().getPulserasIds();
+                    List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
+                    return jackson.writeValueAsString(pulseras);
+                } else {
+                    // If the buildsId exists but the document itself is not found (e.g., deleted manually)
+                    // This is an edge case, but good to handle.
+                    return jackson.writeValueAsString(Collections.emptyList());
+                }
+            } catch (Exception e) {
+                // Catch any other unexpected exceptions (e.g., database issues, JSON serialization errors)
+                System.err.println("Error loading user builds: " + e.getMessage());
+                e.printStackTrace(); // Log the stack trace for debugging
+
+                res.status(500); // Internal Server Error
+                res.type("application/json"); // Ensure content type is JSON
+                return jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", "An unexpected error occurred while fetching your custom builds."));
             }
-            return jackson.writeValueAsString(Collections.emptyList());
         });
     }
 

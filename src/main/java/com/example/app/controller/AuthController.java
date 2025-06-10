@@ -23,7 +23,7 @@ public class AuthController {
         get("/admin", (req, res) -> {
             // Panel de administración, pendiente logica autenticación
             System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /admin" + RESET);
-            res.redirect("/account.html");
+            res.redirect("/admin.html");
             return null;
         });
 

@@ -30,18 +30,27 @@ document.addEventListener('DOMContentLoaded', () => {
         noFavoritesMessage.classList.add('d-none');
 
         try {
+//            const response = await fetch('/api/profile/favoritos');
+//            if (!response.ok) {
+//                // If not authenticated, server returns 401 and `halt()` which closes connection
+//                // Or if it's another server error, throw it.
+//                // Assuming your AuthController redirects to login on 401 if it detects unauthenticated.
+//                // If you get here with a 401, it means the /api/profile/favoritos endpoint itself threw it.
+//                const errorData = await response.json();
+//                console.error('Error al cargar favoritos:', errorData.error);
+//                alert('No autorizado: por favor inicia sesión para ver tus favoritos.');
+//                // Optionally redirect to login page if this isn't handled by AuthController's filter
+//                window.location.href = '/login.html';
+//                return;
+//            }
+
             const response = await fetch('/api/profile/favoritos');
             if (!response.ok) {
-                // If not authenticated, server returns 401 and `halt()` which closes connection
-                // Or if it's another server error, throw it.
-                // Assuming your AuthController redirects to login on 401 if it detects unauthenticated.
-                // If you get here with a 401, it means the /api/profile/favoritos endpoint itself threw it.
-                const errorData = await response.json();
-                console.error('Error al cargar favoritos:', errorData.error);
-                alert('No autorizado: por favor inicia sesión para ver tus favoritos.');
-                // Optionally redirect to login page if this isn't handled by AuthController's filter
-                window.location.href = '/login.html';
-                return;
+                if (response.status === 401) {
+                    window.location.href = '/login'; // Redirect to login if unauthorized
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             const favorites = await response.json();
 
@@ -61,19 +70,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Load Custom Built Bracelets ---
     async function loadBuilds() {
         buildsSpinner.classList.remove('d-none');
-        buildsList.innerHTML = ''; // Clear previous items
+        buildsList.innerHTML = '';
         noBuildsMessage.classList.add('d-none');
 
         try {
             const response = await fetch('/api/profile/builds');
+
+            // Si hay un error HTTP (401, 404, 500...)
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Error al cargar diseños:', errorData.error);
-                alert('No autorizado: por favor inicia sesión para ver tus diseños.');
-                window.location.href = '/login.html';
-                return;
+                console.error("Error del servidor:", errorData);
+
+                if (response.status === 401) {
+                    alert("No estás autenticado. Redirigiendo a login...");
+                    window.location.href = "/login";
+                    return;
+                }
+                throw new Error(errorData.error || "Error al cargar builds");
             }
+
             const builds = await response.json();
+            console.log("Builds cargados:", builds); // Depuración
 
             if (builds.length === 0) {
                 noBuildsMessage.classList.remove('d-none');
@@ -81,13 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 builds.forEach(bracelet => renderBracelet(bracelet, buildsList, 'build'));
             }
         } catch (error) {
-            console.error('Error de conexión o inesperado al cargar diseños:', error);
-            alert('Hubo un problema al cargar tus diseños personalizados. Intenta de nuevo más tarde.');
+            console.error("Error en loadBuilds():", error);
+            alert("Error al cargar diseños: " + error.message); // Mostrar el error real
         } finally {
             buildsSpinner.classList.add('d-none');
         }
     }
-
     // --- Add to Favorites (Example function, would be called from elsewhere) ---
     // You would typically call this from a product page, not from the account page directly
     async function addFavorite(pulseraId) {
