@@ -30,19 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
         noFavoritesMessage.classList.add('d-none');
 
         try {
-//            const response = await fetch('/api/profile/favoritos');
-//            if (!response.ok) {
-//                // If not authenticated, server returns 401 and `halt()` which closes connection
-//                // Or if it's another server error, throw it.
-//                // Assuming your AuthController redirects to login on 401 if it detects unauthenticated.
-//                // If you get here with a 401, it means the /api/profile/favoritos endpoint itself threw it.
-//                const errorData = await response.json();
-//                console.error('Error al cargar favoritos:', errorData.error);
-//                alert('No autorizado: por favor inicia sesión para ver tus favoritos.');
-//                // Optionally redirect to login page if this isn't handled by AuthController's filter
-//                window.location.href = '/login.html';
-//                return;
-//            }
 
             const response = await fetch('/api/profile/favoritos');
             if (!response.ok) {
@@ -56,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (favorites.length === 0) {
                 noFavoritesMessage.classList.remove('d-none');
+                console.log('Prueba');
             } else {
                 favorites.forEach(bracelet => renderBracelet(bracelet, favoritesList, 'favorite'));
             }
@@ -156,6 +144,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Verificar estado de autenticación
+    function checkAuthStatus() {
+        fetch("/api/auth/status")
+            .then(response => {
+                if (!response.ok) throw new Error("Error checking auth status");
+                return response.json();
+            })
+            .then(data => {
+                const guestMenu = document.getElementById("guestMenu");
+                const userMenu = document.getElementById("userMenu");
+                // Get the admin panel link from the user menu
+                const adminPanelLink = userMenu.querySelector('a[href="/admin"]'); // Selects the <a> tag with href="/admin"
+                console.log("Todo bien hasta ahora ...");
+                if (data.authenticated) {
+                    // Mostrar menú de usuario autenticado
+                    guestMenu.classList.add("d-none");
+                    userMenu.classList.remove("d-none");
+
+                    // Actualizar nombre de usuario si está disponible
+                    const dropdownToggle = userMenu.querySelector(".dropdown-toggle");
+                    if (data.username) {
+                        dropdownToggle.innerHTML = `<i class="bi bi-person-circle"></i> ${data.username}`;
+                    }
+
+                    // --- LOGIC FOR ADMIN PANEL ---
+                    if (adminPanelLink) { // Ensure the link exists in the HTML
+                        if (data.role === 'admin') { // Check if the user's role is 'admin'
+                            adminPanelLink.classList.remove("d-none"); // Show the link
+                            adminPanelLink.closest('li').classList.remove("d-none"); // Also show its parent <li> if you hid it
+                        } else {
+                            adminPanelLink.classList.add("d-none"); // Hide the link for non-admin users
+                            adminPanelLink.closest('li').classList.add("d-none"); // Hide its parent <li>
+                        }
+                    }
+                } else {
+                    // Mostrar menú de invitado
+                    guestMenu.classList.remove("d-none");
+                    userMenu.classList.add("d-none");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                // Por defecto mostrar menú de invitado si hay error
+                document.getElementById("guestMenu").classList.remove("d-none");
+                document.getElementById("userMenu").classList.add("d-none");
+            });
+    }
+
+    // Inicializar
+    checkAuthStatus();
     // Initial load of favorites and builds when the page loads
     loadFavorites();
     loadBuilds();
