@@ -26,6 +26,12 @@ public class AuthController {
             return null;
         });
 
+        get("/register", (req, res) -> {
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /register" + RESET);
+            res.redirect("/register.html");
+            return null;
+        });
+
         post("/api/login", (req, res) -> {
             System.out.println(INFO + "[AuthController] " + NEUTRAL + "POST request received for /api/login" + RESET);
             try {
