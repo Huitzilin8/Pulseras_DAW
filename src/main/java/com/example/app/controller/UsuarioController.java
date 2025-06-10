@@ -183,7 +183,7 @@ public class UsuarioController {
             }
 
             // Find the builds document, then find the actual bracelets
-            Optional<Builds> optBuild = buildsDao.findById(currentUser.getFavoritosId());
+            Optional<Builds> optBuild = buildsDao.findById(currentUser.getBuildsId());
             if (optBuild.isPresent()) {
                 List<ObjectId> pulseraIds = optBuild.get().getPulserasIds();
                 List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
