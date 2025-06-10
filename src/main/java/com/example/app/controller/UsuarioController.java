@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.bson.types.ObjectId;
 import com.example.app.dao.UsuarioDAO;
 import com.example.app.model.Usuario;
-import spark.Spark;
 
 import java.io.IOException;
 import java.util.List;

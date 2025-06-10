@@ -1,11 +1,13 @@
 // File: src/main/java/com/example/app/App.java
 package com.example.app;
 
-import com.example.app.controller.UsuarioController;
+import com.example.app.controller.*;
+import com.example.app.dao.ChatDAO;
+import com.example.app.dao.MaterialDAO;
 import com.example.app.dao.UsuarioDAO;
+import com.example.app.dao.PulseraDAO;
 import static com.example.app.constants.ColorCodes.*;
-import com.example.app.controller.AuthController;
-import com.example.app.controller.UserController;
+
 import com.example.app.db.DBInit;
 
 
@@ -39,6 +41,12 @@ public class App {
             UsuarioDAO userDao = new UsuarioDAO(client);
             new AuthController(userDao).registerRoutes();
             new UsuarioController(userDao).registerRoutes();
+
+            MaterialDAO materialDao = new MaterialDAO(client);
+            new MaterialController(materialDao).registerRoutes();
+
+            PulseraDAO pulseraDAO = new PulseraDAO(client);
+            new PulseraController(pulseraDAO).registerRoutes();
 
         } catch (MongoException e) {
             System.out.println(INFO + "[App.java] " + ERROR + "DB connection failed: " + VARIABLE + e.getMessage() + RESET);
