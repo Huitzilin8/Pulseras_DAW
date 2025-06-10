@@ -2,14 +2,16 @@
 package com.example.app.controller;
 
 import com.example.app.dao.BuildsDAO;
+import com.example.app.dao.MaterialDAO;
 import com.example.app.dao.PulseraDAO;
-//import com.example.app.model.Material;
+import com.example.app.model.Material;
 import com.example.app.dao.UsuarioDAO;
 import com.example.app.model.Pulsera;
 import com.example.app.model.Usuario;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +23,7 @@ public class PulseraController {
     private final PulseraDAO pulseraDao;
     private final UsuarioDAO usuarioDao;
     private final BuildsDAO buildsDao;
+    private final MaterialDAO materialDao;
     private static final ObjectMapper jackson = new ObjectMapper();
 
     // A simple helper class to represent the incoming JSON for a custom design
@@ -30,12 +33,12 @@ public class PulseraController {
         // Add any other custom fields you need
     }
 
-    public PulseraController(PulseraDAO pulseraDao, UsuarioDAO usuarioDao, BuildsDAO buildsDao) {
+    public PulseraController(PulseraDAO pulseraDao, UsuarioDAO usuarioDao, BuildsDAO buildsDao, MaterialDAO materialDao) {
         this.pulseraDao = pulseraDao;
         this.usuarioDao = usuarioDao;
         this.buildsDao = buildsDao;
-        // For a real implementation, you'd also pass in MaterialDAO, ColorDAO, etc.
-        // public PulseraController(PulseraDAO pulseraDao, MaterialDAO materialDao) { ... }
+        this.materialDao = materialDao;
+
     }
 
     public void registerRoutes() {
@@ -105,21 +108,42 @@ public class PulseraController {
         post("/api/pulseras/design", (req, res) -> {
             res.type("application/json");
 
+            // 1. Authentication: Ensure user is logged in
             Usuario currentUser = req.session().attribute("user");
             if (currentUser == null) {
-                res.status(401); // Unauthorized
-                return jackson.writeValueAsString(Map.of("error", "You must be logged in to design a bracelet"));
+                halt(401, jackson.writeValueAsString(Map.of("error", "You must be logged in to design a bracelet")));
             }
 
             try {
+                // 2. Parse Request Body
                 DesignRequest design = jackson.readValue(req.body(), DesignRequest.class);
+                if (design.materialesIds == null || design.materialesIds.isEmpty()) {
+                    halt(400, jackson.writeValueAsString(Map.of("error", "A design must include at least one material.")));
+                }
 
-                // 3. Business Logic (Validation & Price Calculation)
-                // In a real app, you would use MaterialDAO to get each material,
-                // validate it exists, and sum up their prices.
-                double calculatedPrice = 50.0 + (design.materialesIds.size() * 10.0); // Example calculation
+                // 3. Business Logic: Validate materials, check inventory, and calculate price
+                double calculatedPrice = 0.0;
+                List<Material> materialsToUpdate = new ArrayList<>();
 
-                // 4. Create the new Pulsera object
+                for (String materialIdStr : design.materialesIds) {
+                    ObjectId materialId = new ObjectId(materialIdStr);
+                    Optional<Material> materialOpt = materialDao.findById(materialId);
+
+                    if (materialOpt.isEmpty()) {
+                        halt(400, jackson.writeValueAsString(Map.of("error", "Invalid material ID provided: " + materialIdStr)));
+                    }
+
+                    Material material = materialOpt.get();
+                    if (material.getCantidadInventario() <= 0) {
+                        halt(409, jackson.writeValueAsString(Map.of("error", "Material out of stock: " + material.getNombre())));
+                    }
+
+                    // Add material price to total and prepare for inventory update
+                    //calculatedPrice += material.getPrecio(); // Assuming Material has a getPrecio() method
+                    materialsToUpdate.add(material);
+                }
+
+                // 4. Create and Save the new Pulsera
                 Pulsera customPulsera = new Pulsera();
                 customPulsera.setMaterialesIds(design.materialesIds.stream().map(ObjectId::new).toList());
                 customPulsera.setCircunferencia(design.circunferencia);
@@ -127,18 +151,28 @@ public class PulseraController {
                 customPulsera.setDescripcion("Custom design by " + currentUser.getNombreUsuario());
                 customPulsera.setUserBuilt(true);
                 customPulsera.setDelisted(true);
+                pulseraDao.create(customPulsera); // Create the bracelet first to get its ID
 
-                // 5. Save to database
-                pulseraDao.create(customPulsera);
+                // 5. Link to User's Builds
+                // This assumes your Usuario has a buildsId and your BuildsDAO has a method to add a pulsera.
+                buildsDao.addPulsera(currentUser.getBuildsId(), customPulsera.getId());
 
-                // You could also update the user's "Builds" list here.
 
+
+                // 7. Return Response
                 res.status(201);
                 return jackson.writeValueAsString(customPulsera);
 
             } catch (Exception e) {
-                res.status(400);
-                return jackson.writeValueAsString(Map.of("error", "Invalid design data", "details", e.getMessage()));
+                // This will catch parsing errors, halt() exceptions, etc.
+                // The halt() method already sets the response, so this might just log.
+                System.err.println("Error during custom design processing: " + e.getMessage());
+                // If the error was not a halt, return a generic error
+                if (!res.raw().isCommitted()) {
+                    res.status(500);
+                    return jackson.writeValueAsString(Map.of("error", "An internal error occurred."));
+                }
+                return ""; // Return empty body if halt was already called
             }
         });
 

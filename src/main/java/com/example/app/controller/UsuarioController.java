@@ -130,7 +130,6 @@ public class UsuarioController {
 
         // Delete a user (Admin)
         delete("/api/admin/usuario/:id", (req, res) -> {
-            // ... (your existing DELETE logic is great and can remain here) ...
             try {
                 usuarioDao.delete(new ObjectId(req.params(":id")));
                 res.status(204);

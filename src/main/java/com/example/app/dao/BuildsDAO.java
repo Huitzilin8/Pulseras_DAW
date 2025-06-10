@@ -2,6 +2,7 @@
 package com.example.app.dao;
 
 import com.example.app.model.Builds;
+import com.example.app.model.Pulsera;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.pull;
+import static com.mongodb.client.model.Updates.push;
 
 /**
  * DAO for the Builds class, which manages collections of user-built pulseras.
@@ -83,6 +86,14 @@ public class BuildsDAO {
                 new Document("$set", new Document("pulserasIds", b.getPulserasIds())) //
         );
         System.out.println("Builds collection with ID " + b.getId().toHexString() + " updated.");
+    }
+
+    public void addPulsera(ObjectId buildsId, ObjectId pulserasId) {
+        col.updateOne(eq("_id", buildsId), push("pulserasId", pulserasId));
+    }
+
+    public void removePulsera(ObjectId buildsId, ObjectId pulseraId) {
+        col.updateOne(eq("_id", buildsId), pull("pulserasIds", pulseraId));
     }
 
     /**

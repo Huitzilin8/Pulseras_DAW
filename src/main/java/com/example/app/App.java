@@ -58,7 +58,7 @@ public class App {
             new ColorController(colorDao).registerRoutes();
 
 
-            new PulseraController(pulseraDAO, userDao, buildDao).registerRoutes();
+            new PulseraController(pulseraDAO, userDao, buildDao, materialDao).registerRoutes();
 
         } catch (MongoException e) {
             System.out.println(INFO + "[App.java] " + ERROR + "DB connection failed: " + VARIABLE + e.getMessage() + RESET);
