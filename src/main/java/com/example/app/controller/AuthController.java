@@ -31,14 +31,23 @@ public class AuthController {
             return null;
         });
 
+        get("/logout", (req, res) -> {
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /logout" + RESET);
+            req.session().invalidate();
+            res.redirect("/index.html");
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "User logged out" + RESET);
+            return null;
+        });
+
         // En AuthController.java
         get("/api/auth/status", (req, res) -> {
             try {
-                Usuario user = req.session().attribute("user");
-                if (user != null) {
+                Usuario usuario = req.session().attribute("user");
+                if (usuario != null) {
                     return jackson.writeValueAsString(Map.of(
                             "authenticated", true,
-                            "username", user.getNombreUsuario()
+                            "username", usuario.getNombreUsuario(),
+                            "role", usuario.getRol()
                     ));
                 } else {
                     return jackson.writeValueAsString(Map.of(
@@ -156,14 +165,6 @@ public class AuthController {
                         "error", e.getMessage() // Devuelve el mensaje de error específico
                 ));
             }
-        });
-
-        get("/logout", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /logout" + RESET);
-            req.session().invalidate();
-            res.redirect("/index.html");
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "User logged out" + RESET);
-            return null;
         });
     }
 }

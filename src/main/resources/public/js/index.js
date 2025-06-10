@@ -170,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(data => {
                 const guestMenu = document.getElementById("guestMenu");
                 const userMenu = document.getElementById("userMenu");
+                // Get the admin panel link from the user menu
+                const adminPanelLink = userMenu.querySelector('a[href="/admin"]'); // Selects the <a> tag with href="/admin"
 
                 if (data.authenticated) {
                     // Mostrar menú de usuario autenticado
@@ -180,6 +182,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     const dropdownToggle = userMenu.querySelector(".dropdown-toggle");
                     if (data.username) {
                         dropdownToggle.innerHTML = `<i class="bi bi-person-circle"></i> ${data.username}`;
+                    }
+
+                    // --- LOGIC FOR ADMIN PANEL ---
+                    if (adminPanelLink) { // Ensure the link exists in the HTML
+                        if (data.role === 'admin') { // Check if the user's role is 'admin'
+                            adminPanelLink.classList.remove("d-none"); // Show the link
+                            adminPanelLink.closest('li').classList.remove("d-none"); // Also show its parent <li> if you hid it
+                        } else {
+                            adminPanelLink.classList.add("d-none"); // Hide the link for non-admin users
+                            adminPanelLink.closest('li').classList.add("d-none"); // Hide its parent <li>
+                        }
                     }
                 } else {
                     // Mostrar menú de invitado
