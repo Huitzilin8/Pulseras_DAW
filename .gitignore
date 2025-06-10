@@ -1,1 +1,90 @@
-/target/**
+# File: .gitignore
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.iml
+*.ipr
+*.iws
+.gradle/
+build/
+out/
+target/
+bin/
+.mvn/
+mvnw
+mvnw.cmd
+.mvn/wrapper/maven-wrapper.jar
+
+### IDE ###
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.DS_Store
+*.orig
+
+### Node/JavaScript ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+dist/
+
+### Frontend dependencies ###
+#src/main/resources/public/css/*.css
+#src/main/resources/public/js/*.min.js
+
+### Environment files ###
+.env
+*.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+### MongoDB ###
+*.ns
+*.0
+mongod.lock
+/data/db/
+*.mdb
+
+### Spark/Logs ###
+.spark/
+logs/
+*.log
+
+### System Files ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+### Documentation ###
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+### Temp/Backup files ###
+*.bak
+*.tmp
+*.temp
+*~
+
+# Exception: Keep these files
+!src/main/resources/public/css/
+!src/main/resources/public/js/
+!mvnw
+!mvnw.cmd
+!src/main/resources/application.properties.example
