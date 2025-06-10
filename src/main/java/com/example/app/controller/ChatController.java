@@ -4,7 +4,6 @@ package com.example.app.controller;
 import com.example.app.dao.ChatDAO;
 import com.example.app.dao.MensajeDAO;
 import com.example.app.dao.UsuarioDAO;
-import com.example.app.dao.UsuarioDAO;
 import com.example.app.model.Chat;
 import com.example.app.model.Mensaje;
 import com.example.app.model.Usuario;
@@ -14,7 +13,6 @@ import org.bson.types.ObjectId;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static spark.Spark.*;
 
