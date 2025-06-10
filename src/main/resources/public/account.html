@@ -1,3 +1,4 @@
+<!-- File: src/main/resources/public/account.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -73,6 +74,49 @@
 
 <div class="container">
   <h2 class="mb-4">Mi Cuenta</h2>
+  <div class="card mb-4">
+    <div class="card-header">
+      Actualizar Nombre de Usuario
+    </div>
+    <div class="card-body">
+      <form id="updateUsernameForm">
+        <div class="mb-3">
+          <label for="newUsername" class="form-label">Nuevo Nombre de Usuario</label>
+          <input type="text" class="form-control" id="newUsername" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar Nombre de Usuario</button>
+        <div class="spinner-border text-primary spinner-border-sm d-none" role="status" id="usernameSpinner">
+          <span class="visually-hidden">Actualizando nombre de usuario...</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      Actualizar Contraseña
+    </div>
+    <div class="card-body">
+      <form id="updatePasswordForm">
+        <div class="mb-3">
+          <label for="currentPassword" class="form-label">Contraseña Actual</label>
+          <input type="password" class="form-control" id="currentPassword" required>
+        </div>
+        <div class="mb-3">
+          <label for="newPassword" class="form-label">Nueva Contraseña</label>
+          <input type="password" class="form-control" id="newPassword" required>
+        </div>
+        <div class="mb-3">
+          <label for="confirmNewPassword" class="form-label">Confirmar Nueva Contraseña</label>
+          <input type="password" class="form-control" id="confirmNewPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar Contraseña</button>
+        <div class="spinner-border text-primary spinner-border-sm d-none" role="status" id="passwordSpinner">
+          <span class="visually-hidden">Actualizando contraseña...</span>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="card mb-4">
     <div class="card-header">

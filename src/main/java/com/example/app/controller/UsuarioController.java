@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.bson.types.ObjectId;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -118,6 +119,14 @@ public class UsuarioController {
         // ===        LOGGED-IN USER ROUTES FOR PROFILE MANAGEMENT       ===
         // =================================================================
 
+        // Protect profile routes (if not already protected)
+        before("/api/profile/*", (req, res) -> {
+            Usuario u = req.session().attribute("usuario");
+            if (u == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
+            }
+        });
+
         // --- FAVORITES MANAGEMENT ---
 
         // GET the current user's favorite bracelets
@@ -215,6 +224,93 @@ public class UsuarioController {
                 res.status(500); // Internal Server Error
                 res.type("application/json"); // Ensure content type is JSON
                 return jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", "An unexpected error occurred while fetching your custom builds."));
+            }
+        });
+        // --- PROFILE UPDATE MANAGEMENT ---
+
+        // PUT (update) the current user's username
+        put("/api/profile/username", (req, res) -> {
+            res.type("application/json");
+            Usuario currentUser = req.session().attribute("usuario"); // Already checked by before filter
+            if (currentUser == null) { // Double check for safety
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
+            }
+
+            try {
+                Map<String, String> body = jackson.readValue(req.body(), Map.class);
+                String newUsername = body.get("newUsername");
+
+                if (newUsername == null || newUsername.trim().isEmpty()) {
+                    res.status(400);
+                    return jackson.writeValueAsString(Map.of("error", "El nuevo nombre de usuario no puede estar vacío."));
+                }
+
+                // Check if username already exists
+                if (usuarioDao.findByUsername(newUsername).isPresent() && !usuarioDao.findByUsername(newUsername).get().getId().equals(currentUser.getId())) {
+                    res.status(409); // Conflict
+                    return jackson.writeValueAsString(Map.of("error", "Este nombre de usuario ya está en uso."));
+                }
+
+                currentUser.setNombreUsuario(newUsername);
+                usuarioDao.update(currentUser); // Assuming update method handles saving the changes
+                req.session().attribute("usuario", currentUser); // Update session with new username
+
+                res.status(200);
+                return jackson.writeValueAsString(Map.of("success", true, "message", "Nombre de usuario actualizado exitosamente."));
+            } catch (Exception e) {
+                System.err.println("Error updating username: " + e.getMessage());
+                e.printStackTrace();
+                res.status(500);
+                return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al actualizar el nombre de usuario."));
+            }
+        });
+
+        // PUT (update) the current user's password
+        put("/api/profile/password", (req, res) -> {
+            res.type("application/json");
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
+            }
+
+            try {
+                Map<String, String> body = jackson.readValue(req.body(), Map.class);
+                String currentPassword = body.get("currentPassword");
+                String newPassword = body.get("newPassword");
+
+                if (currentPassword == null || newPassword == null || currentPassword.isEmpty() || newPassword.isEmpty()) {
+                    res.status(400);
+                    return jackson.writeValueAsString(Map.of("error", "Todos los campos de contraseña son obligatorios."));
+                }
+
+                // Verify current password using BCrypt.verifyer()
+                boolean passwordMatch = BCrypt.verifyer().verify(
+                        currentPassword.toCharArray(),
+                        currentUser.getHashContrasena() // Asume que getContrasenaHash() devuelve el hash en String
+                ).verified;
+
+                if (!passwordMatch) {
+                    res.status(401);
+                    return jackson.writeValueAsString(Map.of("error", "La contraseña actual es incorrecta."));
+                }
+
+                // Hash the new password using BCrypt.withDefaults()
+                String newPasswordHash = BCrypt.withDefaults()
+                        // Puedes ajustar el costo (12) si lo necesitas.
+                        // LongPasswordStrategies.hashSha512(BCrypt.Version.VERSION_2A) es una opción si las contraseñas son muy largas.
+                        // Si no necesitas una estrategia específica para contraseñas largas, `withDefaults()` es suficiente.
+                        .hashToString(12, newPassword.toCharArray());
+
+                currentUser.setHashContrasena(newPasswordHash);
+                usuarioDao.update(currentUser); // Assuming update method handles saving the changes
+
+                res.status(200);
+                return jackson.writeValueAsString(Map.of("success", true, "message", "Contraseña actualizada exitosamente."));
+            } catch (Exception e) {
+                System.err.println("Error updating password: " + e.getMessage());
+                e.printStackTrace();
+                res.status(500);
+                return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al actualizar la contraseña."));
             }
         });
     }

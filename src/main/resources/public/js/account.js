@@ -1,4 +1,4 @@
-// File: src/main/resources/public/account.html
+// File: src/main/resources/public/account.js
 document.addEventListener('DOMContentLoaded', () => {
     const favoritesList = document.getElementById('favoritesList');
     const buildsList = document.getElementById('buildsList');
@@ -11,6 +11,94 @@ document.addEventListener('DOMContentLoaded', () => {
     const myAlertModal = new bootstrap.Modal(document.getElementById('myAlertModal'));
     const myAlertModalLabel = document.getElementById('myAlertModalLabel');
     const myAlertModalBody = document.getElementById('myAlertModalBody');
+
+    // Get references to the new forms and spinners
+    const updateUsernameForm = document.getElementById('updateUsernameForm');
+    const newUsernameInput = document.getElementById('newUsername');
+    const usernameSpinner = document.getElementById('usernameSpinner');
+
+    const updatePasswordForm = document.getElementById('updatePasswordForm');
+    const currentPasswordInput = document.getElementById('currentPassword');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+    const passwordSpinner = document.getElementById('passwordSpinner');
+
+    // --- Update Username ---
+        updateUsernameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            usernameSpinner.classList.remove('d-none');
+            const newUsername = newUsernameInput.value;
+
+            try {
+                const response = await fetch('/api/profile/username', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ newUsername })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('success', data.message);
+                    // Optionally update the username in the header without full page reload
+                    const dropdownToggle = document.querySelector(".dropdown-toggle");
+                    if (dropdownToggle) {
+                        dropdownToggle.innerHTML = `<i class="bi bi-person-circle"></i> ${newUsername}`;
+                    }
+                    newUsernameInput.value = ''; // Clear the input field
+                } else {
+                    showAlert('danger', data.error || 'Error al actualizar el nombre de usuario.');
+                }
+            } catch (error) {
+                console.error('Error al actualizar el nombre de usuario:', error);
+                showAlert('danger', 'Error de conexión al actualizar el nombre de usuario.');
+            } finally {
+                usernameSpinner.classList.add('d-none');
+            }
+        });
+
+        // --- Update Password ---
+        updatePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            passwordSpinner.classList.remove('d-none');
+            const currentPassword = currentPasswordInput.value;
+            const newPassword = newPasswordInput.value;
+            const confirmNewPassword = confirmNewPasswordInput.value;
+
+            if (newPassword !== confirmNewPassword) {
+                showAlert('warning', 'La nueva contraseña y su confirmación no coinciden.');
+                passwordSpinner.classList.add('d-none');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/profile/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('success', data.message);
+                    currentPasswordInput.value = '';
+                    newPasswordInput.value = '';
+                    confirmNewPasswordInput.value = ''; // Clear all input fields
+                } else {
+                    showAlert('danger', data.error || 'Error al actualizar la contraseña.');
+                }
+            } catch (error) {
+                console.error('Error al actualizar la contraseña:', error);
+                showAlert('danger', 'Error de conexión al actualizar la contraseña.');
+            } finally {
+                passwordSpinner.classList.add('d-none');
+            }
+        });
 
     // Function to display a bracelet item
     function renderBracelet(bracelet, listElement, type = 'favorite') {
@@ -243,4 +331,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial load of favorites and builds when the page loads
     loadFavorites();
     loadBuilds();
+
 });
