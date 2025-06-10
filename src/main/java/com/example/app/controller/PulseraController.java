@@ -1,8 +1,10 @@
 // File: src/main/java/com/example/app/controller/PulseraController.java
 package com.example.app.controller;
 
+import com.example.app.dao.BuildsDAO;
 import com.example.app.dao.PulseraDAO;
 //import com.example.app.model.Material;
+import com.example.app.dao.UsuarioDAO;
 import com.example.app.model.Pulsera;
 import com.example.app.model.Usuario;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +19,8 @@ import static spark.Spark.*;
 public class PulseraController {
 
     private final PulseraDAO pulseraDao;
+    private final UsuarioDAO usuarioDao;
+    private final BuildsDAO buildsDao;
     private static final ObjectMapper jackson = new ObjectMapper();
 
     // A simple helper class to represent the incoming JSON for a custom design
@@ -26,8 +30,10 @@ public class PulseraController {
         // Add any other custom fields you need
     }
 
-    public PulseraController(PulseraDAO pulseraDao) {
+    public PulseraController(PulseraDAO pulseraDao, UsuarioDAO usuarioDao, BuildsDAO buildsDao) {
         this.pulseraDao = pulseraDao;
+        this.usuarioDao = usuarioDao;
+        this.buildsDao = buildsDao;
         // For a real implementation, you'd also pass in MaterialDAO, ColorDAO, etc.
         // public PulseraController(PulseraDAO pulseraDao, MaterialDAO materialDao) { ... }
     }
@@ -120,7 +126,7 @@ public class PulseraController {
                 customPulsera.setPrecio(calculatedPrice);
                 customPulsera.setDescripcion("Custom design by " + currentUser.getNombreUsuario());
                 customPulsera.setUserBuilt(true);
-                customPulsera.setDelisted(false);
+                customPulsera.setDelisted(true);
 
                 // 5. Save to database
                 pulseraDao.create(customPulsera);
@@ -140,7 +146,7 @@ public class PulseraController {
         // === ADMIN-ONLY ROUTES ===
 
         // POST a new pre-made bracelet (Admin)
-        post("/api/pulseras", (req, res) -> {
+        post("/api/admin/pulseras", (req, res) -> {
             res.type("application/json");
             try {
                 Pulsera pulsera = jackson.readValue(req.body(), Pulsera.class);
@@ -156,7 +162,7 @@ public class PulseraController {
         });
 
         // PUT (update) a bracelet's info (Admin)
-        put("/api/pulseras/:id", (req, res) -> {
+        put("/api/admin/pulseras/:id", (req, res) -> {
             res.type("application/json");
             try {
                 String id = req.params(":id");
@@ -172,7 +178,7 @@ public class PulseraController {
         });
 
         // DELETE (soft delete) a bracelet (Admin)
-        delete("/api/pulseras/:id", (req, res) -> {
+        delete("/api/admin/pulseras/:id", (req, res) -> {
             try {
                 ObjectId id = new ObjectId(req.params(":id"));
                 // Instead of a hard delete, we do a soft delete

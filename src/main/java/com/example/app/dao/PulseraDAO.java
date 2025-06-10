@@ -27,6 +27,7 @@ public class PulseraDAO {
     private Pulsera docToPulsera(Document d) {
         Pulsera p = new Pulsera();
         p.setId(d.getObjectId("_id"));
+        p.setNombre(d.getString("nombre"));
         p.setDescripcion(d.getString("descripcion")); //
         p.setCircunferencia(d.getDouble("circunferencia")); //
         p.setPrecio(d.getDouble("precio")); //
@@ -34,18 +35,21 @@ public class PulseraDAO {
         p.setColoresIds(d.getList("coloresIds", ObjectId.class)); //
         p.setDelisted(d.getBoolean("delisted")); //
         p.setUserBuilt(d.getBoolean("userBuilt")); //
+        p.setImgURL(d.getString("imgURL"));
         return p;
     }
 
     public void create(Pulsera p) {
         Document d = new Document()
+                .append("nombre", p.getNombre()) //
                 .append("descripcion", p.getDescripcion()) //
                 .append("circunferencia", p.getCircunferencia()) //
                 .append("precio", p.getPrecio()) //
                 .append("materialesIds", p.getMaterialesIds()) //
                 .append("coloresIds", p.getColoresIds()) //
                 .append("delisted", p.getDelisted()) //
-                .append("userBuilt", p.getUserBuilt()); //
+                .append("userBuilt", p.getUserBuilt())
+                .append("imgURL", p.getImgURL());
         col.insertOne(d);
         p.setId(d.getObjectId("_id"));
     }

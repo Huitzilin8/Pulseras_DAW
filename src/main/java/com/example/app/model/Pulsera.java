@@ -6,6 +6,7 @@ import org.bson.types.ObjectId;
 
 public class Pulsera implements Serializable {
     private ObjectId id;
+    private String nombre;
     private String descripcion;
     private Double circunferencia;
     private Double precio;
@@ -13,6 +14,7 @@ public class Pulsera implements Serializable {
     private List<ObjectId> coloresIds;
     private Boolean delisted;
     private Boolean userBuilt; // Falso == creado por admin
+    private String imgURL;
 
     public Pulsera() {}
 
@@ -24,6 +26,10 @@ public class Pulsera implements Serializable {
     public void setId(ObjectId id) {
         this.id = id;
     }
+
+    public String getNombre() {return nombre;}
+
+    public void setNombre(String nombre) {this.nombre = nombre;}
 
     public String getDescripcion() {
         return this.descripcion;
@@ -80,4 +86,8 @@ public class Pulsera implements Serializable {
     public void setUserBuilt(Boolean userBuilt) {
         this.userBuilt = userBuilt;
     }
+
+    public String getImgURL() {return imgURL;}
+
+    public void setImgURL(String imgURL) {this.imgURL = imgURL;}
 }
