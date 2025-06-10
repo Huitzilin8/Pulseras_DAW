@@ -2,6 +2,8 @@
 package com.example.app.model;
 
 import java.io.Serializable;
+import java.time.Instant;
+
 import org.bson.types.ObjectId;
 
 public class Usuario implements Serializable {
@@ -12,6 +14,8 @@ public class Usuario implements Serializable {
     private String rol; // "admin" o "usuario"
     private ObjectId favoritosId;
     private ObjectId buildsId;
+    private ObjectId chatId;
+    private Instant ultimoLogin;
 
     public Usuario() {}
 
@@ -71,4 +75,12 @@ public class Usuario implements Serializable {
     public void setBuildsId(ObjectId buildsId) {
         this.buildsId = buildsId;
     }
+
+    public ObjectId getChatId() {return chatId;}
+
+    public void setChatId(ObjectId chatId) {this.chatId = chatId;}
+
+    public Instant getUltimoLogin() {return ultimoLogin;}
+
+    public void setUltimoLogin(Instant ultimoLogin) {this.ultimoLogin = ultimoLogin;}
 }

@@ -11,8 +11,6 @@ import com.example.app.db.DBInit;
 
 import static spark.Spark.*;
 
-import com.example.app.model.Usuario;
-import com.example.app.model.Ventas;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -51,8 +49,7 @@ public class App {
 
             ChatDAO chatDao = new ChatDAO(client);
             MensajeDAO mensajeDao = new MensajeDAO(client);
-            SesionDAO sesionDao = new SesionDAO(client);
-            new ChatController(chatDao, mensajeDao, sesionDao).registerRoutes();
+            new ChatController(chatDao, mensajeDao, userDao).registerRoutes();
 
             VentasDAO ventDao = new VentasDAO(client);
             new VentasController(ventDao, pulseraDAO).registerRoutes();
