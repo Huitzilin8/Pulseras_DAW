@@ -12,7 +12,6 @@
 .gradle/
 build/
 out/
-target/*
 bin/
 .mvn/
 mvnw
@@ -88,3 +87,4 @@ $RECYCLE.BIN/
 !mvnw
 !mvnw.cmd
 !src/main/resources/application.properties.example
+/target/
