@@ -2,13 +2,14 @@ package com.example.app.model;
 
 import org.bson.types.ObjectId;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Date;
 
 public class Mensaje implements Serializable {
     private ObjectId id;
     private String contenido;
-    private Date fecha;
-    private String sessionId;
+    private Instant fecha;
+    private ObjectId chatId;
     private ObjectId remitenteId; // Null si es invitado, userId si es usuario loggeado
     private boolean esAdmin;      // True si lo envía un admin
 
@@ -31,20 +32,20 @@ public class Mensaje implements Serializable {
         this.contenido = contenido;
     }
 
-    public Date getFecha() {
+    public Instant getFecha() {
         return fecha;
     }
 
-    public void setFecha(Date fecha) {
+    public void setFecha(Instant fecha) {
         this.fecha = fecha;
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public ObjectId getChatId() {
+        return chatId;
     }
 
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+    public void setChatId(ObjectId chatId) {
+        this.chatId = chatId;
     }
 
     public ObjectId getRemitenteId() {

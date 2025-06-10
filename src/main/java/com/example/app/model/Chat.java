@@ -2,6 +2,7 @@ package com.example.app.model;
 
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Date;
 import org.bson.types.ObjectId;
 
@@ -9,7 +10,7 @@ public class Chat implements Serializable {
     private ObjectId id;
     private String sessionId;
     private Boolean activo;
-    private Date fechaUltimoMensaje;
+    private Instant fechaUltimoMensaje;
 
     public Chat() {}
 
@@ -38,11 +39,11 @@ public class Chat implements Serializable {
         this.activo = activo;
     }
 
-    public Date getFechaUltimoMensaje() {
+    public Instant getFechaUltimoMensaje() {
         return fechaUltimoMensaje;
     }
 
-    public void setFechaUltimoMensaje(Date fechaUltimoMensaje) {
+    public void setFechaUltimoMensaje(Instant fechaUltimoMensaje) {
         this.fechaUltimoMensaje = fechaUltimoMensaje;
     }
 }

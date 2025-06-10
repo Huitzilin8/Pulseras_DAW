@@ -2,14 +2,15 @@ package com.example.app.model;
 
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Date;
 import org.bson.types.ObjectId;
 
 public class Sesion implements Serializable {
     private String sessionId;
     private ObjectId usuarioId; // Null si es invitado, asignado al loggearse
-    private Date fechaCreacion;
-    private Date ultimaActividad;
+    private Instant fechaCreacion;
+    private Instant ultimaActividad;
     private ObjectId chatId;
 
     public Sesion() {}
@@ -31,19 +32,19 @@ public class Sesion implements Serializable {
         this.usuarioId = usuarioId;
     }
 
-    public Date getFechaCreacion() {
+    public Instant getFechaCreacion() {
         return fechaCreacion;
     }
 
-    public void setFechaCreacion(Date fechaCreacion) {
+    public void setFechaCreacion(Instant fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
 
-    public Date getUltimaActividad() {
+    public Instant getUltimaActividad() {
         return ultimaActividad;
     }
 
-    public void setUltimaActividad(Date ultimaActividad) {
+    public void setUltimaActividad(Instant ultimaActividad) {
         this.ultimaActividad = ultimaActividad;
     }
 

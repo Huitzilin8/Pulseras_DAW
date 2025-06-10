@@ -7,6 +7,7 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class ChatDAO {
         c.setId(d.getObjectId("_id"));
         c.setSessionId(d.getString("sessionId")); //
         c.setActivo(d.getBoolean("activo")); //
-        c.setFechaUltimoMensaje(d.getDate("fechaUltimoMensaje")); //
+        c.setFechaUltimoMensaje(d.getDate("fechaUltimoMensaje").toInstant()); //
         return c;
     }
 
@@ -51,10 +52,16 @@ public class ChatDAO {
         return Optional.ofNullable(d).map(this::docToChat);
     }
 
-    public List<Chat> findActiveChats() {
+    public List<Chat> findActive() {
         List<Chat> list = new ArrayList<>();
         col.find(eq("activo", true)).forEach(d -> list.add(docToChat(d)));
         return list;
+    }
+
+    public void updateLastMessageDate(ObjectId id, Instant date) {
+        col.updateOne(eq("_id", id),
+                new Document("$set", new Document("lastMessageDate", date))
+        );
     }
 
     public void update(Chat c) {

@@ -1,12 +1,16 @@
 package com.example.app.model;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.util.Date;
+
 import org.bson.types.ObjectId;
 
 public class Ventas implements Serializable {
     private ObjectId id;
     private ObjectId usuarioId;
     private ObjectId pulseraId;
+    private Instant fechaVenta;
 
     public Ventas() {}
 
@@ -34,4 +38,8 @@ public class Ventas implements Serializable {
     public void setPulseraId(ObjectId pulseraId) {
         this.pulseraId = pulseraId;
     }
+
+    public Instant getFechaVenta() { return this.fechaVenta;}
+
+    public void setFechaVenta(Instant fecha) { this.fechaVenta = fecha;}
 }
