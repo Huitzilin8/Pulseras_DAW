@@ -51,6 +51,22 @@ public class UserDAO {
         System.out.println(INFO + "[UserDAO] " + SUCCESS + "User found by ID: " + VARIABLE + id + " (Username: " + user.getUsername() + ")" + RESET);
         return Optional.of(user);
     }
+    public Optional<User> findByEmail(String email) {
+        System.out.println(INFO + "[UserDAO] " + NEUTRAL + "Searching for user with ID: " + VARIABLE + email + RESET);
+        Document d = col.find(eq("correo", email)).first();
+        if (d == null) {
+            System.out.println(INFO + "[UserDAO] " + NEUTRAL + "User with email " + VARIABLE + email + NEUTRAL + " not found." + RESET);
+            return Optional.empty();
+        }
+        User user = docToUser(d);
+        System.out.println(INFO + "[UserDAO] " + SUCCESS + "User found by email: " + VARIABLE + email + " (Username: " + user.getUsername() + ")" + RESET);
+        return Optional.of(user);
+    }
+
+    public boolean checkEmailUse(String email) {
+        Document d = col.find(eq("correo", email)).first();
+        return d != null;
+    }
     public List<User> listAll() {
         System.out.println(INFO + "[UserDAO] " + NEUTRAL + "Listing all users." + RESET);
         List<User> list = new ArrayList<>();
