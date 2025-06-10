@@ -12,6 +12,7 @@ import com.example.app.db.DBInit;
 import static spark.Spark.*;
 
 import com.example.app.model.Usuario;
+import com.example.app.model.Ventas;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -41,11 +42,23 @@ public class App {
             BuildsDAO buildDao = new BuildsDAO(client);
             PulseraDAO pulseraDAO = new PulseraDAO(client);
 
+
             new AuthController(userDao).registerRoutes();
             new UsuarioController(userDao, favDao, buildDao, pulseraDAO).registerRoutes();
 
             MaterialDAO materialDao = new MaterialDAO(client);
             new MaterialController(materialDao).registerRoutes();
+
+            ChatDAO chatDao = new ChatDAO(client);
+            MensajeDAO mensajeDao = new MensajeDAO(client);
+            SesionDAO sesionDao = new SesionDAO(client);
+            new ChatController(chatDao, mensajeDao, sesionDao).registerRoutes();
+
+            VentasDAO ventDao = new VentasDAO(client);
+            new VentasController(ventDao, pulseraDAO).registerRoutes();
+
+            ColorDAO colorDao = new ColorDAO(client);
+            new ColorController(colorDao).registerRoutes();
 
 
             new PulseraController(pulseraDAO).registerRoutes();
