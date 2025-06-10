@@ -46,7 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const searchTerm = searchInput.value.toLowerCase();
         filteredBracelets = allBracelets.filter(bracelet =>
             bracelet.nombre.toLowerCase().includes(searchTerm) ||
-            bracelet.materiales.some(m => m.toLowerCase().includes(searchTerm));
+            bracelet.materiales.some(m => m.toLowerCase().includes(searchTerm))
+        );
 
         renderBracelets();
     }
@@ -159,16 +160,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
     }
 
-    // Verificar estado de autenticación (ejemplo)
+    // Verificar estado de autenticación
     function checkAuthStatus() {
         fetch("/api/auth/status")
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error("Error checking auth status");
+                return response.json();
+            })
             .then(data => {
+                const guestMenu = document.getElementById("guestMenu");
+                const userMenu = document.getElementById("userMenu");
+
                 if (data.authenticated) {
-                    userDropdown.innerHTML = `<i class="bi bi-person-circle"></i> ${data.username}`;
+                    // Mostrar menú de usuario autenticado
+                    guestMenu.classList.add("d-none");
+                    userMenu.classList.remove("d-none");
+
+                    // Actualizar nombre de usuario si está disponible
+                    const dropdownToggle = userMenu.querySelector(".dropdown-toggle");
+                    if (data.username) {
+                        dropdownToggle.innerHTML = `<i class="bi bi-person-circle"></i> ${data.username}`;
+                    }
+                } else {
+                    // Mostrar menú de invitado
+                    guestMenu.classList.remove("d-none");
+                    userMenu.classList.add("d-none");
                 }
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                console.error("Error:", error);
+                // Por defecto mostrar menú de invitado si hay error
+                document.getElementById("guestMenu").classList.remove("d-none");
+                document.getElementById("userMenu").classList.add("d-none");
+            });
     }
 
     // Inicializar

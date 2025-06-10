@@ -6,8 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     registerForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const nombre = document.getElementById("nombre").value;
-        const apellido = document.getElementById("apellido").value;
+        const nombreUsuario = document.getElementById("nombre").value;
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         const confirmPassword = document.getElementById("confirmPassword").value;
@@ -23,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nombre, apellido, email, password })
+                body: JSON.stringify({ nombre, email, password })
             });
 
             if (response.ok) {
@@ -31,8 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => window.location.href = "login.html", 2000);
             } else {
                 const error = await response.json();
-                showAlert("danger", error.message || "Error en el registro");
-            }
+                showAlert("danger", error.error || "Error en el registro"); // Access 'error.error'
         } catch (error) {
             showAlert("danger", "Error de conexión");
         } finally {
