@@ -123,6 +123,15 @@ public class AuthController {
                     ));
                 }
 
+                // Verificar si el correo ya está en uso
+                if (dao.checkEmailUse(data.get("email"))) {
+                    res.status(400);
+                    return jackson.writeValueAsString(Map.of(
+                            "success", false,
+                            "error", "El correo electrónico ya está registrado"
+                    ));
+                }
+
                 // Crear nuevo usuario
                 Usuario nuevoUsuario = new Usuario();
                 nuevoUsuario.setNombreUsuario(data.get("nombre"));
@@ -132,9 +141,6 @@ public class AuthController {
                 String hash = BCrypt.withDefaults().hashToString(12, data.get("password").toCharArray());
                 nuevoUsuario.setHashContrasena(hash);
                 nuevoUsuario.setRol("user");
-
-                // Establecer nombreUsuario (podría ser el email o generarlo)
-                nuevoUsuario.setNombreUsuario(data.get("email"));
 
                 dao.create(nuevoUsuario);
                 res.status(201);

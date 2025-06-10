@@ -74,14 +74,14 @@ public class UsuarioDAO {
      * @return An Optional containing the found Usuario, or empty if not found.
      */
     public Optional<Usuario> findByUsername(String nombreUsuario) {
-        System.out.println("Searching for user with username: " + nombreUsuario);
+        System.out.println("[UsuarioDAO] Searching for user with username: " + nombreUsuario);
         Document d = col.find(eq("nombreUsuario", nombreUsuario)).first();
         if (d == null) {
-            System.out.println("User with username " + nombreUsuario + " not found.");
+            System.out.println("[UsuarioDAO] User with username " + nombreUsuario + " not found.");
             return Optional.empty();
         }
         Usuario usuario = docToUsuario(d);
-        System.out.println("User found by username: " + nombreUsuario + " (ID: " + usuario.getId().toHexString() + ")");
+        System.out.println("[UsuarioDAO] User found by username: " + nombreUsuario + " (ID: " + usuario.getId().toHexString() + ")");
         return Optional.of(usuario);
     }
 
@@ -91,15 +91,42 @@ public class UsuarioDAO {
      * @return An Optional containing the found Usuario, or empty if not found.
      */
     public Optional<Usuario> findById(ObjectId id) {
-        System.out.println("Searching for user with ID: " + id.toHexString());
+        System.out.println("[UsuarioDAO] Searching for user with ID: " + id.toHexString());
         Document d = col.find(eq("_id", id)).first();
         if (d == null) {
-            System.out.println("User with ID " + id.toHexString() + " not found.");
+            System.out.println("[UsuarioDAO] User with ID " + id.toHexString() + " not found.");
             return Optional.empty();
         }
         Usuario usuario = docToUsuario(d);
-        System.out.println("User found by ID: " + id.toHexString() + " (Username: " + usuario.getNombreUsuario() + ")");
+        System.out.println("[UsuarioDAO] User found by ID: " + id.toHexString() + " (Username: " + usuario.getNombreUsuario() + ")");
         return Optional.of(usuario);
+    }
+
+    /**
+     * Finds a user by their email.
+     * @param email The email to search for.
+     * @return An Optional containing the found Usuario, or empty if not found.
+     */
+    public Optional<Usuario> findByEmail(String email) {
+        System.out.println(INFO + "[UserDAO] " + NEUTRAL + "Searching for user with ID: " + VARIABLE + email + RESET);
+        Document d = col.find(eq("correo", email)).first();
+        if (d == null) {
+            System.out.println(INFO + "[UserDAO] " + NEUTRAL + "User with email " + VARIABLE + email + NEUTRAL + " not found." + RESET);
+            return Optional.empty();
+        }
+        Usuario usuario = docToUsuario(d);
+        System.out.println(INFO + "[UserDAO] " + SUCCESS + "User found by email: " + VARIABLE + email + " (Username: " + usuario.getNombreUsuario() + ")" + RESET);
+        return Optional.of(usuario);
+    }
+
+    /**
+     * Checks wether a user already exists for a given email.
+     * @param email The email to search for.
+     * @return A boolean, returns True if found, False if not.
+     */
+    public boolean checkEmailUse(String email) {
+        Document d = col.find(eq("correo", email)).first();
+        return d != null;
     }
 
     /**
@@ -107,10 +134,10 @@ public class UsuarioDAO {
      * @return A List of all Usuario objects.
      */
     public List<Usuario> listAll() {
-        System.out.println("Listing all users.");
+        System.out.println("[UsuarioDAO] Listing all users.");
         List<Usuario> list = new ArrayList<>();
         col.find().forEach(d -> list.add(docToUsuario(d)));
-        System.out.println("Retrieved " + list.size() + " users.");
+        System.out.println("[UsuarioDAO] Retrieved " + list.size() + " users.");
         return list;
     }
 
@@ -119,7 +146,7 @@ public class UsuarioDAO {
      * @param u The Usuario object with updated information.
      */
     public void update(Usuario u) {
-        System.out.println("Updating user with ID: " + u.getId().toHexString());
+        System.out.println("[UsuarioDAO] Updating user with ID: " + u.getId().toHexString());
         col.updateOne(eq("_id", u.getId()),
                 new Document("$set", new Document()
                         .append("nombreUsuario", u.getNombreUsuario())
@@ -130,7 +157,7 @@ public class UsuarioDAO {
                         .append("buildsId", u.getBuildsId())
                 )
         );
-        System.out.println("User with ID " + u.getId().toHexString() + " updated.");
+        System.out.println("[UsuarioDAO] User with ID " + u.getId().toHexString() + " updated.");
     }
 
     /**
