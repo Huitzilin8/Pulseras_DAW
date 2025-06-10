@@ -15,17 +15,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email : email, password : password })
             });
 
-            if (response.ok) {
-                window.location.href = "/";
+            // Always attempt to parse JSON.
+            const data = await response.json();
+
+            // Check response.ok for success (2xx status codes)
+            if (response.ok) { // This handles status 200 explicitly
+                // Your Java backend for successful login sets `success: true`
+                // and includes the user object.
+                alert('Login exitoso!.');
+                window.location.href = '/';
             } else {
-                const error = await response.json();
-                showAlert("danger", error.message || "Error al iniciar sesión");
+                // For non-2xx status codes (400, 401, 500),
+                // your Java backend returns `success: false` and `message`
+                alert(data.message || 'Error en el login. Por favor intenta nuevamente.');
             }
         } catch (error) {
-            showAlert("danger", "Error de conexión");
+            // This catch block is for network errors or if response.json() fails
+            console.error('Error:', error);
+            alert('Error de conexión. Por favor intenta nuevamente.');
         } finally {
             loginSpinner.classList.add("d-none");
         }

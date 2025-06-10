@@ -75,7 +75,7 @@ public class AuthController {
                 System.out.println(INFO + "[AuthController] " + NEUTRAL + "Login attempt for email: " + VARIABLE + email + RESET);
 
                 // Find by username, which is stored as the email from registration
-                Optional<Usuario> opt = dao.findByUsername(email); // Assuming findByUsername now searches by email
+                Optional<Usuario> opt = dao.findByEmail(email); // Assuming findByUsername now searches by email
                 if (opt.isEmpty()) {
                     System.out.println(ERROR + "[AuthController] " + NEUTRAL + "User not found with email: " + VARIABLE + email + RESET);
                     res.status(401);
