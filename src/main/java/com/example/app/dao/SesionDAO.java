@@ -25,8 +25,8 @@ public class SesionDAO {
         Sesion s = new Sesion();
         s.setSessionId(d.getString("_id")); // Using _id as sessionId
         s.setUsuarioId(d.getObjectId("usuarioId")); //
-        s.setFechaCreacion(d.getDate("fechaCreacion")); //
-        s.setUltimaActividad(d.getDate("ultimaActividad")); //
+        s.setFechaCreacion(d.getDate("fechaCreacion").toInstant()); //
+        s.setUltimaActividad(d.getDate("ultimaActividad").toInstant()); //
         s.setChatId(d.getObjectId("chatId")); //
         return s;
     }

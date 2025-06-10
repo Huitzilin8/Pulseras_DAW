@@ -2,12 +2,16 @@
 package com.example.app.controller;
 
 import com.example.app.dao.ChatDAO;
+import com.example.app.dao.MensajeDAO;
+import com.example.app.dao.SesionDAO;
 import com.example.app.model.Chat;
-import com.example.app.model.Usuario; // Assuming this is your User model for roles
+import com.example.app.model.Mensaje;
+import com.example.app.model.Sesion;
+import com.example.app.model.Usuario;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.bson.types.ObjectId;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,118 +21,99 @@ import static spark.Spark.*;
 public class ChatController {
 
     private final ChatDAO chatDao;
+    private final MensajeDAO mensajeDao;
+    private final SesionDAO sesionDao;
     private static final ObjectMapper jackson = new ObjectMapper();
 
-    public ChatController(ChatDAO chatDao) {
+    public ChatController(ChatDAO chatDao, MensajeDAO mensajeDao, SesionDAO sesionDao) {
         this.chatDao = chatDao;
-        // Configure Jackson to handle dates properly
-        jackson.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.mensajeDao = mensajeDao;
+        this.sesionDao = sesionDao;
     }
 
     public void registerRoutes() {
 
-        // === SECURITY FILTER ===
-        // This filter protects all chat-related routes.
-        // It assumes that only admins should be able to view or manage chat logs directly.
-        // A separate controller or WebSocket handler would manage user-facing chat interactions.
-        before("/api/chats/*", (req, res) -> {
-            Usuario currentUser = req.session().attribute("user");
+        // Get or create a chat session for the current browser session.
+        // This is the main entry point for a user starting a chat.
+        get("/api/chat/session", (req, res) -> {
+            res.type("application/json");
+            String sparkSessionId = req.session(true).id(); // Get or create a Spark session
+            Usuario currentUser = req.session().attribute("usuario");
 
-            if (currentUser == null || !"admin".equals(currentUser.getRol())) {
-                halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
+            Optional<Sesion> sesionOpt = sesionDao.findById(sparkSessionId);
+
+            if (sesionOpt.isPresent()) {
+                // Session exists, find its chat
+                ObjectId chatId = sesionOpt.get().getChatId();
+                return jackson.writeValueAsString(chatDao.findById(chatId).orElse(null));
+            } else {
+                // No session exists, so we create a new Chat and a new Sesion
+                Chat newChat = new Chat();
+                newChat.setActivo(true);
+                newChat.setFechaUltimoMensaje(Instant.now());
+                chatDao.create(newChat);
+
+                Sesion newSesion = new Sesion();
+                newSesion.setSessionId(sparkSessionId);
+                newSesion.setChatId(newChat.getId());
+                newSesion.setFechaCreacion(Instant.now());
+                if (currentUser != null) {
+                    newSesion.setUsuarioId(currentUser.getId());
+                }
+                sesionDao.create(newSesion);
+
+                return jackson.writeValueAsString(newChat);
             }
         });
 
+        // Get all messages for a specific chat
+        get("/api/chat/:chatId/messages", (req, res) -> {
+            res.type("application/json");
+            // Production code needs to verify the user has access to this chat!
+            ObjectId chatId = new ObjectId(req.params(":chatId"));
+            List<Mensaje> messages = mensajeDao.findByChatId(chatId);
+            return jackson.writeValueAsString(messages);
+        });
 
-        // === ADMIN-ONLY ROUTES ===
+        // Post a new message to a chat
+        post("/api/chat/:chatId/messages", (req, res) -> {
+            res.type("application/json");
+            // Production code needs access verification here too.
+            ObjectId chatId = new ObjectId(req.params(":chatId"));
+            Usuario currentUser = req.session().attribute("usuario");
 
-        // GET all active chats
+            Map<String, String> body = jackson.readValue(req.body(), Map.class);
+
+            Mensaje newMessage = new Mensaje();
+            newMessage.setChatId(chatId);
+            newMessage.setContenido(body.get("contenido"));
+            newMessage.setFecha(Instant.now());
+
+            if (currentUser != null) {
+                newMessage.setRemitenteId(currentUser.getId());
+                if ("admin".equals(currentUser.getRol())) {
+                    newMessage.setEsAdmin(true);
+                }
+            }
+
+            mensajeDao.create(newMessage);
+            chatDao.updateLastMessageDate(chatId, Instant.now()); // Assumes DAO method exists
+
+            res.status(201);
+            return jackson.writeValueAsString(newMessage);
+        });
+
+        // --- ADMIN ROUTES ---
+
+        // Get all active chats (for admin dashboard)
         get("/api/chats/active", (req, res) -> {
             res.type("application/json");
-            try {
-                List<Chat> activeChats = chatDao.findActiveChats();
-                return jackson.writeValueAsString(activeChats);
-            } catch (Exception e) {
-                res.status(500);
-                return jackson.writeValueAsString(Map.of("error", "Failed to retrieve active chats: " + e.getMessage()));
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null || !"admin".equals(currentUser.getRol())) {
+                halt(403, "Forbidden");
             }
-        });
-
-        // GET a single chat by its MongoDB ObjectId
-        get("/api/chats/:id", (req, res) -> {
-            res.type("application/json");
-            try {
-                String id = req.params(":id");
-                Optional<Chat> chatOpt = chatDao.findById(new ObjectId(id));
-
-                if (chatOpt.isPresent()) {
-                    return jackson.writeValueAsString(chatOpt.get());
-                } else {
-                    res.status(404); // Not Found
-                    return jackson.writeValueAsString(Map.of("error", "Chat not found with that ID"));
-                }
-            } catch (IllegalArgumentException e) {
-                res.status(400); // Bad Request
-                return jackson.writeValueAsString(Map.of("error", "Invalid chat ID format"));
-            }
-        });
-
-        // GET a single chat by its session ID
-        get("/api/chats/session/:sessionId", (req, res) -> {
-            res.type("application/json");
-            try {
-                String sessionId = req.params(":sessionId");
-                Optional<Chat> chatOpt = chatDao.findBySessionId(sessionId);
-
-                if (chatOpt.isPresent()) {
-                    return jackson.writeValueAsString(chatOpt.get());
-                } else {
-                    res.status(404); // Not Found
-                    return jackson.writeValueAsString(Map.of("error", "Chat not found with that session ID"));
-                }
-            } catch (Exception e) {
-                res.status(500);
-                return jackson.writeValueAsString(Map.of("error", "An error occurred: " + e.getMessage()));
-            }
-        });
-
-        // POST (create) a new chat session.
-        // This might be initiated by a user, so the security could be relaxed here if needed.
-        post("/api/chats", (req, res) -> {
-            res.type("application/json");
-            try {
-                Chat newChat = jackson.readValue(req.body(), Chat.class);
-
-                if (newChat.getSessionId() == null || newChat.getSessionId().isBlank()) {
-                    res.status(400); // Bad Request
-                    return jackson.writeValueAsString(Map.of("error", "Field 'sessionId' is required."));
-                }
-
-                chatDao.create(newChat);
-                res.status(201); // 201 Created
-                return jackson.writeValueAsString(newChat);
-            } catch (Exception e) {
-                res.status(400); // Bad Request on malformed JSON
-                return jackson.writeValueAsString(Map.of("error", "Invalid request data: " + e.getMessage()));
-            }
-        });
-
-        // PUT (update) an existing chat's status
-        put("/api/chats/:id", (req, res) -> {
-            res.type("application/json");
-            try {
-                String id = req.params(":id");
-                Chat updatedInfo = jackson.readValue(req.body(), Chat.class);
-
-                // Ensure we're updating the correct chat
-                updatedInfo.setId(new ObjectId(id));
-
-                chatDao.update(updatedInfo);
-                return jackson.writeValueAsString(updatedInfo);
-            } catch (Exception e) {
-                res.status(400);
-                return jackson.writeValueAsString(Map.of("error", "Invalid update data: " + e.getMessage()));
-            }
+            List<Chat> activeChats = chatDao.findActive(); // Assumes DAO method exists
+            return jackson.writeValueAsString(activeChats);
         });
     }
 }

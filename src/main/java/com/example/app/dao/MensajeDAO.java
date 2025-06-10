@@ -27,8 +27,8 @@ public class MensajeDAO {
         Mensaje m = new Mensaje();
         m.setId(d.getObjectId("_id"));
         m.setContenido(d.getString("contenido")); //
-        m.setFecha(d.getDate("fecha")); //
-        m.setSessionId(d.getString("sessionId")); //
+        m.setFecha(d.getDate("fecha").toInstant()); //
+        m.setChatId(d.getObjectId("chatId")); //
         m.setRemitenteId(d.getObjectId("remitenteId")); //
         m.setEsAdmin(d.getBoolean("esAdmin", false)); //
         return m;
@@ -38,18 +38,18 @@ public class MensajeDAO {
         Document d = new Document()
                 .append("contenido", m.getContenido()) //
                 .append("fecha", m.getFecha()) //
-                .append("sessionId", m.getSessionId()) //
+                .append("chatId", m.getChatId()) //
                 .append("remitenteId", m.getRemitenteId()) //
                 .append("esAdmin", m.isEsAdmin()); //
         col.insertOne(d);
         m.setId(d.getObjectId("_id"));
     }
 
-    public List<Mensaje> findBySessionId(String sessionId) {
-        List<Mensaje> list = new ArrayList<>();
-        col.find(eq("sessionId", sessionId))
-                .sort(Sorts.ascending("fecha"))
-                .forEach(d -> list.add(docToMensaje(d)));
-        return list;
+    public List<Mensaje> findByChatId(ObjectId chatId) {
+        List<Mensaje> mensajes = new ArrayList<>();
+        col.find(eq("_id", chatId))
+                .sort(Sorts.descending("fecha"))
+                .forEach(m -> mensajes.add(docToMensaje(m)));
+        return mensajes;
     }
 }
