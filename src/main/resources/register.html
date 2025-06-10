@@ -1,0 +1,82 @@
+<!-- File: src/main/resources/public/register.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Galería de Pulseras</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .auth-card {
+            max-width: 500px;
+            margin: 3rem auto;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="auth-card card">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Cuenta</h4>
+        </div>
+        <div class="card-body">
+            <form id="registerForm">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" minlength="8" required>
+                    <div class="form-text">Mínimo 8 caracteres</div>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <span id="registerSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        Registrarse
+                    </button>
+                    <a href="login.html" class="btn btn-outline-secondary">Ya tengo una cuenta</a>
+                    <!-- Botón para regresar a la página principal -->
+                    <a href="/" class="btn btn-outline-dark mt-3">
+                        <i class="bi bi-arrow-left"></i> Regresar al Inicio
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--Alertas-->
+<div class="modal fade" id="myAlertModal" tabindex="-1" aria-labelledby="myAlertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myAlertModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="myAlertModalBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/register.js"></script>
+</body>
+</html>
