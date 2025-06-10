@@ -1,3 +1,4 @@
+// File: src/main/java/com/example/app/controller/AuthController.java
 package com.example.app.controller;
 
 import com.example.app.dao.UsuarioDAO;

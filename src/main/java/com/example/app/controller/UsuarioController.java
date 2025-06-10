@@ -54,7 +54,7 @@ public class UsuarioController {
         // =================================================================
 
         // Protect admin routes
-        before("/api/usuario/*", (req, res) -> {
+        before("/api/admin/*", (req, res) -> {
             Usuario u = req.session().attribute("usuario");
             if (u == null || !"admin".equals(u.getRol())) {
                 halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
@@ -62,14 +62,14 @@ public class UsuarioController {
         });
 
         // Get a list of all users
-        get("/api/usuarios", (req, res) -> {
+        get("/api/admin/usuarios", (req, res) -> {
             res.type("application/json");
             List<Usuario> usuarios = usuarioDao.listAll();
             return jackson.writeValueAsString(usuarios);
         });
 
         // Create a new user (Admin)
-        post("/api/usuario", (req, res) -> {
+        post("/api/admin/usuario", (req, res) -> {
             res.type("application/json");
             try {
                 Usuario u = jackson.readValue(req.body(), Usuario.class);
@@ -83,7 +83,7 @@ public class UsuarioController {
         });
 
         // Update an existing user (Admin)
-        put("/api/usuario/:id", (req, res) -> {
+        put("/api/admin/usuario/:id", (req, res) -> {
             res.type("application/json");
             // ... (your existing PUT logic is great and can remain here) ...
             try {
@@ -102,7 +102,7 @@ public class UsuarioController {
         });
 
         // Delete a user (Admin)
-        delete("/api/usuario/:id", (req, res) -> {
+        delete("/api/admin/usuario/:id", (req, res) -> {
             // ... (your existing DELETE logic is great and can remain here) ...
             try {
                 usuarioDao.delete(new ObjectId(req.params(":id")));
@@ -120,7 +120,7 @@ public class UsuarioController {
         // =================================================================
 
         // Protect profile routes (if not already protected)
-        before("/api/profile/*", (req, res) -> {
+        before("/api/usuario/*", (req, res) -> {
             Usuario u = req.session().attribute("usuario");
             if (u == null) {
                 halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
@@ -130,7 +130,7 @@ public class UsuarioController {
         // --- FAVORITES MANAGEMENT ---
 
         // GET the current user's favorite bracelets
-        get("/api/profile/favoritos", (req, res) -> {
+        get("/api/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
@@ -148,7 +148,7 @@ public class UsuarioController {
         });
 
         // POST (add) a bracelet to the user's favorites
-        post("/api/profile/favoritos", (req, res) -> {
+        post("/api/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
@@ -165,7 +165,7 @@ public class UsuarioController {
         });
 
         // DELETE a bracelet from the user's favorites
-        delete("/api/profile/favoritos/:pulseraId", (req, res) -> {
+        delete("/api/usuario/profile/favoritos/:pulseraId", (req, res) -> {
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
                 halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
@@ -183,7 +183,7 @@ public class UsuarioController {
         // --- BUILDS MANAGEMENT ---
 
         // GET the current user's custom-built bracelets
-        get("/api/profile/builds", (req, res) -> {
+        get("/api/usuario/profile/builds", (req, res) -> {
             res.type("application/json"); // Set default content type for successful responses
 
             Usuario currentUser = req.session().attribute("usuario");
@@ -229,7 +229,7 @@ public class UsuarioController {
         // --- PROFILE UPDATE MANAGEMENT ---
 
         // PUT (update) the current user's username
-        put("/api/profile/username", (req, res) -> {
+        put("/api/usuario/profile/username", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario"); // Already checked by before filter
             if (currentUser == null) { // Double check for safety
@@ -266,7 +266,7 @@ public class UsuarioController {
         });
 
         // PUT (update) the current user's password
-        put("/api/profile/password", (req, res) -> {
+        put("/api/usuario/profile/password", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {

@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newUsername = newUsernameInput.value;
 
             try {
-                const response = await fetch('/api/profile/username', {
+                const response = await fetch('/api/usuario/profile/username', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch('/api/profile/password', {
+                const response = await fetch('/api/usuario/profile/password', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
 
-            const response = await fetch('/api/profile/favoritos');
+            const response = await fetch('/api/usuario/profile/favoritos');
             if (!response.ok) {
                 if (response.status === 401) {
                     window.location.href = '/login'; // Redirect to login if unauthorized
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noBuildsMessage.classList.add('d-none');
 
         try {
-            const response = await fetch('/api/profile/builds');
+            const response = await fetch('/api/usuario/profile/builds');
 
             // Si hay un error HTTP (401, 404, 500...)
             if (!response.ok) {
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // You would typically call this from a product page, not from the account page directly
     async function addFavorite(pulseraId) {
         try {
-            const response = await fetch('/api/profile/favoritos', {
+            const response = await fetch('/api/usuario/profile/favoritos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pulseraId })
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`/api/profile/favoritos/${pulseraId}`, {
+                const response = await fetch(`/api/usuario/profile/favoritos/${pulseraId}`, {
                     method: 'DELETE'
                 });
 
