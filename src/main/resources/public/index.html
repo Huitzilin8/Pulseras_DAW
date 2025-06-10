@@ -1,23 +1,84 @@
-<!-- File: src/main/resources/public/index.html -->
 <!DOCTYPE html>
-<html><head>
-    <meta charset="utf-8"><title>Users</title>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Pulseras</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head><body>
-<nav class="navbar navbar-light bg-light">
-    <a class="navbar-brand" href="#">MyApp</a>
-    <div>
-        <a id="loginLink" href="/login">Login</a>
-        <a id="logoutLink" href="/logout" class="d-none">Logout</a>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<!-- Header -->
+<header class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-gem me-2"></i>Pulseras FIEE
+        </a>
+        <div class="d-flex align-items-center">
+            <a href="#" class="btn btn-outline-light me-2"><i class="bi bi-house"></i> Home</a>
+            <a href="#" class="btn btn-outline-light me-2"><i class="bi bi-tools"></i> Builder</a>
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#">Perfil</a></li>
+                    <li><a class="dropdown-item" href="#">Configuración</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">Logout</a></li>
+                </ul>
+            </div>
+        </div>
     </div>
-</nav>
-<div class="container mt-4">
-    <h1>User Management</h1>
-    <button id="addBtn" class="btn btn-primary mb-3">Add User</button>
-    <table class="table" id="usersTable">
-        <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Registered</th><th>Last Login</th><th>Actions</th></tr></thead>
-        <tbody id="tableBody"></tbody>
-    </table>
-</div>
-<script src="/js/main.js"></script>
-</body></html>
+</header>
+
+<!-- Body: Galería y Mapa -->
+<main class="container my-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Galería de Pulseras</h2>
+            <div class="input-group mb-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar pulseras...">
+                <button class="btn btn-primary" id="searchBtn">Buscar</button>
+            </div>
+            <div class="row" id="galleryContainer">
+                <!-- Las pulseras se cargarán aquí dinámicamente con JavaScript -->
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ubicación FIEE</h5>
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3557.176812697703!2d-96.1144773419472!3d19.164721004421946!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2smx!4v1749521054204!5m2!1sen!2smx"
+                            width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-white py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Equipo</h5>
+                <p>Proyecto desarrollado por:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-person-fill"></i> Jose Antonio Villar Caparroso - [tu@email.com]</li>
+                    <li><i class="bi bi-person-fill"></i> Luis Emilio Castillón Caracas - emiliocastillon8@gmail.com</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>Localización</h5>
+                <p><i class="bi bi-geo-alt-fill"></i> Bv. Adolfo Ruíz Cortines, Costa Verde, 94294 Veracruz, Ver.</p>
+                <p><i class="bi bi-geo-alt-fill"></i> Boca del Río, Veracruz. México.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/index.js"></script>
+</body>
+</html>
