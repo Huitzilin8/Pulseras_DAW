@@ -68,6 +68,33 @@ public class UsuarioController {
             return jackson.writeValueAsString(usuarios);
         });
 
+        // NUEVO ENDPOINT: Get a specific user by ID (Admin)
+        get("/api/admin/usuario/:id", (req, res) -> {
+            res.type("application/json");
+            try {
+                ObjectId userId = new ObjectId(req.params(":id"));
+                Optional<Usuario> userOptional = usuarioDao.findById(userId);
+
+                if (userOptional.isPresent()) {
+                    Usuario user = userOptional.get();
+                    res.status(200);
+                    return jackson.writeValueAsString(user);
+                } else {
+                    res.status(404); // Not Found
+                    return jackson.writeValueAsString(Map.of("error", "Usuario no encontrado"));
+                }
+            } catch (IllegalArgumentException e) {
+                // Catches if the ID format is invalid (e.g., not a valid ObjectId string)
+                res.status(400); // Bad Request
+                return jackson.writeValueAsString(Map.of("error", "ID de usuario inválido", "details", e.getMessage()));
+            } catch (Exception e) {
+                System.err.println("Error getting user by ID: " + e.getMessage());
+                e.printStackTrace();
+                res.status(500); // Internal Server Error
+                return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al obtener el usuario"));
+            }
+        });
+
         // Create a new user (Admin)
         post("/api/admin/usuario", (req, res) -> {
             res.type("application/json");

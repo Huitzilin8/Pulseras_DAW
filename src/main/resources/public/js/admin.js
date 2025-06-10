@@ -56,15 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 users.forEach(user => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${user._id.substring(18)}</td>
+                        <td>${user.id.substring(18)}</td>
                         <td>${user.nombreUsuario || 'N/A'}</td>
                         <td>${user.correo || 'N/A'}</td>
                         <td>${user.rol || 'user'}</td>
                         <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning edit-user" data-id="${user._id}">
+                            <button class="btn btn-sm btn-warning edit-user" data-id="${user.id}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger delete-user" data-id="${user._id}">
+                            <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al cargar usuarios');
+                showAlert('danger','Error al cargar usuarios: '+ error);
             })
             .finally(() => {
                 usersSpinner.style.display = 'none';
@@ -104,16 +104,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 bracelets.forEach(bracelet => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${bracelet._id.substring(18)}</td>
+                        <td>${bracelet.id.substring(18)}</td>
                         <td>${bracelet.nombre || 'Sin nombre'}</td>
                         <td>$${bracelet.precio?.toFixed(2) || '0.00'}</td>
                         <td>${bracelet.userBuilt ? 'Personalizada' : 'Predefinida'}</td>
                         <td>${bracelet.delisted ? 'Retirada' : 'Disponible'}</td>
                         <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning edit-bracelet" data-id="${bracelet._id}">
+                            <button class="btn btn-sm btn-warning edit-bracelet" data-id="${bracelet.id}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger delete-bracelet" data-id="${bracelet._id}">
+                            <button class="btn btn-sm btn-danger delete-bracelet" data-id="${bracelet.id}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al cargar pulseras');
+                showAlert('danger','Error al cargar pulseras: ' + error);
             })
             .finally(() => {
                 braceletsSpinner.style.display = 'none';
@@ -167,14 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(`/api/admin/usuario/${userId}`)
                 .then(response => response.json())
                 .then(user => {
-                    document.getElementById('userId').value = user._id;
+                    document.getElementById('userId').value = user.id;
                     document.getElementById('userName').value = user.nombreUsuario;
                     document.getElementById('userEmail').value = user.correo;
                     document.getElementById('userRole').value = user.rol;
                 })
                 .catch(error => {
                     console.error('Error al cargar usuario:', error);
-                    alert('Error al cargar datos del usuario');
+                    showAlert('danger','Error al cargar datos del usuario: ' + error);
                 });
         }
 
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(`/api/pulseras/${braceletId}`)
                 .then(response => response.json())
                 .then(bracelet => {
-                    document.getElementById('braceletId').value = bracelet._id;
+                    document.getElementById('braceletId').value = bracelet.id;
                     document.getElementById('braceletName').value = bracelet.nombre;
                     document.getElementById('braceletDescription').value = bracelet.descripcion;
                     document.getElementById('braceletPrice').value = bracelet.precio;
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch(error => {
                     console.error('Error al cargar pulsera:', error);
-                    alert('Error al cargar datos de la pulsera');
+                    showAlert('danger','Error al cargar datos de la pulsera: ' + error);
                 });
         }
 
@@ -250,13 +250,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(() => {
-            alert('Usuario guardado correctamente');
+            showAlert('success','Usuario guardado correctamente');
+
             userModal.hide();
             loadUsers();
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al guardar usuario');
+            showAlert('danger','Error al guardar usuario: ' + error);
         });
     }
 
@@ -285,13 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(() => {
-            alert('Pulsera guardada correctamente');
+            showAlert('success','Pulsera guardada correctamente');
             braceletModal.hide();
             loadBracelets();
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al guardar pulsera');
+            showAlert('danger','Error al guardar pulsera: ' + error);
         });
     }
 
@@ -327,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(() => {
-                alert('Acción realizada correctamente');
+                showAlert('success','Acción realizada correctamente');
                 if (currentAction.includes('User')) {
                     loadUsers();
                 } else {
@@ -336,7 +337,48 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al realizar la acción');
+                showAlert('danger','Error al realizar la acción: ' + error);
             });
+    }
+
+    /**
+     * Displays a Bootstrap modal alert.
+     * @param {string} type - The type of alert (e.g., 'success', 'danger', 'info', 'warning'). This affects the modal title.
+     * @param {string} message - The message to display in the alert.
+     */
+    function showAlert(type, message, duration = 1000) {
+        // Set modal title based on type
+        switch (type) {
+            case 'success':
+                myAlertModalLabel.textContent = 'Éxito';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-success text-white';
+                break;
+            case 'danger':
+                myAlertModalLabel.textContent = 'Error';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-danger text-white';
+                break;
+            case 'info':
+                myAlertModalLabel.textContent = 'Información';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-info text-white';
+                break;
+            case 'warning':
+                myAlertModalLabel.textContent = 'Advertencia';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-warning text-dark';
+                break;
+            default:
+                myAlertModalLabel.textContent = 'Alerta';
+                myAlertModalLabel.parentElement.className = 'modal-header';
+        }
+
+        // Set modal body message
+        myAlertModalBody.textContent = message;
+
+        // Show the modal
+        myAlertModal.show();
+
+        // Set timeout to hide the modal after duration (default: 3000ms = 3 seconds)
+        setTimeout(() => {
+            myAlertModal.hide();
+        }, duration);
     }
 });
