@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.app.constants.ColorCodes.*;
 import static com.mongodb.client.model.Filters.eq;
 
 /**
@@ -53,7 +54,7 @@ public class UsuarioDAO {
      * @param u The Usuario object to create.
      */
     public void create(Usuario u) {
-        System.out.println("Trying to create new user: " + u.getNombreUsuario());
+        System.out.println(INFO + "[UsuarioDAO] Trying to create new user: " + u.getNombreUsuario() + RESET);
         Document d = new Document()
                 .append("nombreUsuario", u.getNombreUsuario())
                 .append("hashContrasena", u.getHashContrasena())
@@ -64,7 +65,7 @@ public class UsuarioDAO {
         col.insertOne(d);
         // Set the generated ObjectId back into the user object
         u.setId(d.getObjectId("_id"));
-        System.out.println("User created: " + u.getNombreUsuario() + " (ID: " + u.getId().toHexString() + ")");
+        System.out.println(SUCCESS + "[UsuarioDAO]" + INFO + " User created: " + VARIABLE + u.getNombreUsuario() + INFO + " (ID: " + VARIABLE + u.getId().toHexString() + INFO +")");
     }
 
     /**
