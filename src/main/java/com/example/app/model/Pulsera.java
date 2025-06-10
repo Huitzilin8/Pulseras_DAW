@@ -1,3 +1,4 @@
+// File: src/main/java/model/Pulsera.java
 package com.example.app.model;
 
 import java.io.Serializable;

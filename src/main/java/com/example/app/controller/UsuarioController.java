@@ -53,14 +53,6 @@ public class UsuarioController {
         // ===            ADMIN-ONLY ROUTES FOR USER MANAGEMENT          ===
         // =================================================================
 
-        // Protect admin routes
-        before("/api/admin/*", (req, res) -> {
-            Usuario u = req.session().attribute("usuario");
-            if (u == null || !"admin".equals(u.getRol())) {
-                halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
-            }
-        });
-
         // Get a list of all users
         get("/api/admin/usuarios", (req, res) -> {
             res.type("application/json");

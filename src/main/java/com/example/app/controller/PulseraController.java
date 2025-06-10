@@ -10,16 +10,25 @@ import com.example.app.model.Pulsera;
 import com.example.app.model.Usuario;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
+import spark.utils.IOUtils;
 
 import java.util.ArrayList;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.http.Part;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static spark.Spark.*;
 
 public class PulseraController {
 
+    private static final String RELATIVE_IMG_UPLOAD_BASE_PATH = "src/main/resources/public/img";
+    private final String ABSOLUTE_IMG_UPLOAD_DIR; // Esta será la ruta absoluta final
     private final PulseraDAO pulseraDao;
     private final UsuarioDAO usuarioDao;
     private final BuildsDAO buildsDao;
@@ -39,24 +48,31 @@ public class PulseraController {
         this.buildsDao = buildsDao;
         this.materialDao = materialDao;
 
+        // For a real implementation, you'd also pass in MaterialDAO, ColorDAO, etc.
+        // public PulseraController(PulseraDAO pulseraDao, MaterialDAO materialDao) { ... }
+        // Construir la ruta absoluta en el constructor
+        String currentWorkingDir = System.getProperty("user.dir");
+        this.ABSOLUTE_IMG_UPLOAD_DIR = Paths.get(currentWorkingDir, RELATIVE_IMG_UPLOAD_BASE_PATH).toAbsolutePath().toString();
+
+        // Crear el directorio si no existe
+        File uploadDir = new File(this.ABSOLUTE_IMG_UPLOAD_DIR);
+        if (!uploadDir.exists()) {
+            try {
+                Files.createDirectories(uploadDir.toPath());
+                System.out.println("Created image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
+            } catch (IOException e) {
+                System.out.println("Failed to create image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR+ e);
+                // Si el directorio no se puede crear, es un error crítico.
+                // Podrías lanzar una RuntimeException o manejarlo de otra forma.
+                throw new RuntimeException("Failed to initialize image upload directory", e);
+            }
+        } else {
+            System.out.println("Image upload directory already exists: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
+        }
+        System.out.println("Image upload path initialized to: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
     }
 
     public void registerRoutes() {
-
-        // === SECURITY FILTER for Admin Routes ===
-        // This protects the standard POST, PUT, and DELETE methods.
-        before("/api/pulseras/:id", (req, res) -> {
-            if (req.requestMethod().equals("PUT") || req.requestMethod().equals("DELETE")) {
-                checkAdmin(req);
-            }
-        });
-        before("/api/pulseras", (req, res) -> {
-            if (req.requestMethod().equals("POST")) {
-                checkAdmin(req);
-            }
-        });
-
-
         // === PUBLIC ROUTES ===
 
         // GET all available bracelets (with optional filtering)
@@ -111,7 +127,8 @@ public class PulseraController {
             // 1. Authentication: Ensure user is logged in
             Usuario currentUser = req.session().attribute("user");
             if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "You must be logged in to design a bracelet")));
+                res.status(401); // Unauthorized
+                return jackson.writeValueAsString(Map.of("error", "You must be logged in to design a bracelet"));
             }
 
             try {
@@ -195,6 +212,61 @@ public class PulseraController {
             }
         });
 
+        // ===========================================
+        // NUEVO ENDPOINT PARA SERVIR IMÁGENES PÚBLICAS
+        // ===========================================
+        get("/api/public/img/:filename", (req, res) -> {
+            String filename = req.params(":filename");
+            File imageFile = Paths.get(ABSOLUTE_IMG_UPLOAD_DIR, filename).toFile();
+
+            if (imageFile.exists() && imageFile.isFile()) {
+                try (InputStream is = new FileInputStream(imageFile)) {
+                    res.type("image/png"); // Asumiendo que todas las imágenes son PNG
+                    IOUtils.copy(is, res.raw().getOutputStream());
+                    return res.raw();
+                } catch (IOException e) {
+                    System.out.println("Error serving image " + filename + ": "+ e.getMessage());
+                    res.status(500);
+                    return "Internal server error: Could not serve image.";
+                }
+            } else {
+                System.out.println("Image file not found: " + filename);
+                res.status(404);
+                return "Image not found.";
+            }
+        });
+
+        // POST endpoint for image upload
+        post("/api/admin/upload/img", (req, res) -> {
+            System.out.println("Attempting to upload a picture...");
+            try {
+                // Especifica el directorio de subida (ABSOLUTE_IMG_UPLOAD_DIR),
+                // límites de tamaño y que se almacene en disco.
+                req.attribute("org.eclipse.jetty.multipartConfig",
+                        new MultipartConfigElement(ABSOLUTE_IMG_UPLOAD_DIR));
+
+                Part filePart = req.raw().getPart("image"); // "image" es el nombre del campo en el formulario multipart
+                String fileName = UUID.randomUUID().toString() + ".png"; // Asegura extensión PNG y nombre único
+
+                // Usa la ruta ABSOLUTA para crear el archivo
+                File outputFilePath = Paths.get(ABSOLUTE_IMG_UPLOAD_DIR, fileName).toFile();
+
+                try (InputStream inputStream = filePart.getInputStream();
+                     FileOutputStream outputStream = new FileOutputStream(outputFilePath)) {
+                    IOUtils.copy(inputStream, outputStream);
+                }
+
+                res.type("application/json");
+                System.out.println("Image uploaded successfully: {}"+fileName);
+                return jackson.writeValueAsString(Map.of("filename", fileName));
+
+            } catch (Exception e) {
+                System.out.println("Error during image upload"+ e); // Usa logger para un mejor manejo de logs
+                res.status(500);
+                return jackson.writeValueAsString(Map.of("error", "Image upload failed", "details", e.getMessage()));
+            }
+        });
+
         // PUT (update) a bracelet's info (Admin)
         put("/api/admin/pulseras/:id", (req, res) -> {
             res.type("application/json");
@@ -224,13 +296,5 @@ public class PulseraController {
                 return jackson.writeValueAsString(Map.of("error", "Invalid bracelet ID"));
             }
         });
-    }
-
-    // Helper method to check for admin role
-    private void checkAdmin(spark.Request req) throws Exception {
-        Usuario currentUser = req.session().attribute("user");
-        if (currentUser == null || !"admin".equals(currentUser.getRol())) {
-            halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
-        }
     }
 }

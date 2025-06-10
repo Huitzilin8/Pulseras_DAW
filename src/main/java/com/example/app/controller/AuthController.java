@@ -21,6 +21,14 @@ public class AuthController {
 
     public void registerRoutes() {
 
+        // Protect admin routes
+        before("/api/admin/*", (req, res) -> {
+            Usuario u = req.session().attribute("usuario");
+            if (u == null || !"admin".equals(u.getRol())) {
+                halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
+            }
+        });
+
         get("/admin", (req, res) -> {
             // Panel de administración, pendiente logica autenticación
             System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /admin" + RESET);

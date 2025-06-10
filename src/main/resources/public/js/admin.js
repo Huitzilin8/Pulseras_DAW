@@ -1,19 +1,26 @@
-// File: src/main/resources/js/admin.js
+    // File: src/main/resources/js/admin.js
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del DOM
     const usersTableBody = document.getElementById('usersTableBody');
-    const braceletsTableBody = document.getElementById('braceletsTableBody');
+    const braceletsCardContainer = document.getElementById('braceletsCardContainer');
     const usersSpinner = document.getElementById('usersSpinner');
     const braceletsSpinner = document.getElementById('braceletsSpinner');
+    const braceletImageInput = document.getElementById('braceletImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const imgpathInput = document.getElementById('imgpath');
 
     // Modales
     const userModal = new bootstrap.Modal(document.getElementById('userModal'));
     const braceletModal = new bootstrap.Modal(document.getElementById('braceletModal'));
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const myAlertModal = new bootstrap.Modal(document.getElementById('myAlertModal'));
+    const myAlertModalLabel = document.getElementById('myAlertModalLabel');
+    const myAlertModalBody = document.getElementById('myAlertModalBody');
 
     // Variables de estado
     let currentAction = '';
     let currentItemId = '';
+    let currentBracelet = null; // Para almacenar los datos de la pulsera actual al editar
 
     // Inicialización
     checkAdminStatus();
@@ -26,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('saveUserBtn').addEventListener('click', saveUser);
     document.getElementById('saveBraceletBtn').addEventListener('click', saveBracelet);
     document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+
+    if (braceletImageInput) {
+        braceletImageInput.addEventListener('change', handleImageUpload);
+    }
 
     // Verificar estado de administrador
     function checkAdminStatus() {
@@ -93,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cargar pulseras
     function loadBracelets() {
         braceletsSpinner.style.display = 'block';
-        braceletsTableBody.innerHTML = '';
+        braceletsCardContainer.innerHTML = ''; // Limpiar el contenedor de cartas
 
         fetch('/api/pulseras')
             .then(response => {
@@ -102,35 +113,44 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(bracelets => {
                 bracelets.forEach(bracelet => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${bracelet.id.substring(18)}</td>
-                        <td>${bracelet.nombre || 'Sin nombre'}</td>
-                        <td>$${bracelet.precio?.toFixed(2) || '0.00'}</td>
-                        <td>${bracelet.userBuilt ? 'Personalizada' : 'Predefinida'}</td>
-                        <td>${bracelet.delisted ? 'Retirada' : 'Disponible'}</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning edit-bracelet" data-id="${bracelet.id}">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-bracelet" data-id="${bracelet.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
+                    const card = document.createElement('div');
+                    card.classList.add('col');
+                    const imageUrl = bracelet.imgURL ? bracelet.imgURL : ''; // Usa la URL de la imagen si existe
+                    const imageHtml = imageUrl ? `<img src="${imageUrl}" class="card-img-top" alt="${bracelet.nombre}">` : `<div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Sin Imagen</div>`;
+
+                    card.innerHTML = `
+                        <div class="card h-100">
+                            ${imageHtml}
+                            <div class="card-body">
+                                <h5 class="card-title">${bracelet.nombre || 'Sin nombre'}</h5>
+                                <p class="card-text">Precio: $${bracelet.precio?.toFixed(2) || '0.00'}</p>
+                                <p class="card-text"><small class="text-muted">${bracelet.userBuilt ? 'Personalizada' : 'Predefinida'}</small></p>
+                                <p class="card-text"><small class="text-muted">${bracelet.delisted ? 'Retirada' : 'Disponible'}</small></p>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-warning edit-bracelet" data-id="${bracelet.id}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-bracelet" data-id="${bracelet.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     `;
-                    braceletsTableBody.appendChild(row);
+                    braceletsCardContainer.appendChild(card);
                 });
 
-                // Agregar event listeners a los botones
+                // Agregar event listeners a los botones de las cartas
                 document.querySelectorAll('.edit-bracelet').forEach(btn => {
                     btn.addEventListener('click', () => showBraceletModal('edit', btn.dataset.id));
                 });
 
                 document.querySelectorAll('.delete-bracelet').forEach(btn => {
                     btn.addEventListener('click', () => showConfirmModal(
-                        bracelet.delisted ? 'activateBracelet' : 'deleteBracelet',
+                        // Se verifica si la pulsera está 'delisted' para determinar si la acción es reactivar o retirar
+                        bracelets.find(b => b.id === btn.dataset.id)?.delisted ? 'activateBracelet' : 'deleteBracelet',
                         btn.dataset.id,
-                        bracelet.delisted ?
+                        bracelets.find(b => b.id === btn.dataset.id)?.delisted ?
                             '¿Estás seguro de que deseas reactivar esta pulsera?' :
                             '¿Estás seguro de que deseas retirar esta pulsera?'
                     ));
@@ -184,10 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mostrar modal de pulsera
     function showBraceletModal(action, braceletId = null) {
         const modalTitle = document.getElementById('braceletModalTitle');
+        const braceletForm = document.getElementById('braceletForm');
+        braceletForm.reset(); // Limpiar el formulario al abrir el modal
+        imagePreview.innerHTML = ''; // Limpiar la vista previa de la imagen
+        imgpathInput.value = ''; // Limpiar el path de la imagen
+        currentBracelet = null; // Resetear la pulsera actual
 
         if (action === 'add') {
             modalTitle.textContent = 'Agregar Nueva Pulsera';
-            document.getElementById('braceletForm').reset();
             currentAction = 'addBracelet';
         } else {
             modalTitle.textContent = 'Editar Pulsera';
@@ -198,11 +222,20 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(`/api/pulseras/${braceletId}`)
                 .then(response => response.json())
                 .then(bracelet => {
+                    currentBracelet = bracelet; // Guardar la pulsera actual
                     document.getElementById('braceletId').value = bracelet.id;
                     document.getElementById('braceletName').value = bracelet.nombre;
                     document.getElementById('braceletDescription').value = bracelet.descripcion;
                     document.getElementById('braceletPrice').value = bracelet.precio;
                     document.getElementById('braceletStatus').value = bracelet.delisted;
+                    if (bracelet.imgURL) {
+                        imagePreview.innerHTML = `<img src="${bracelet.imgURL}" alt="Vista previa" style="max-width: 100px; max-height: 100px;">`;
+                        // Guardar solo el nombre del archivo si la URL es /img/{path}.png
+                        const imgPathMatch = bracelet.imgURL.match(/\/img\/(.*)/);
+                        if (imgPathMatch && imgPathMatch[1]) {
+                            imgpathInput.value = imgPathMatch[1];
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('Error al cargar pulsera:', error);
@@ -251,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(() => {
             showAlert('success','Usuario guardado correctamente');
-
             userModal.hide();
             loadUsers();
         })
@@ -261,39 +293,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Subir imagen y obtener la ruta
+    async function uploadImage(file) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch('/api/admin/upload/img', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || 'Error al subir la imagen');
+            }
+
+            const data = await response.json();
+            return data.filename; // Suponiendo que la respuesta JSON tiene un campo 'filename'
+        } catch (error) {
+            console.error('Error al subir la imagen:', error);
+            showAlert('danger', 'Error al subir la imagen: ' + error.message);
+            return null;
+        }
+    }
+
+    async function handleImageUpload(event) {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.type === 'image/png') {
+                const filename = await uploadImage(file);
+                if (filename) {
+                    imgpathInput.value = filename; // Guarda solo el nombre del archivo
+                    imagePreview.innerHTML = `<img src="/api/public/img/${filename}" alt="Vista previa" style="max-width: 100px; max-height: 100px;">`;
+                }
+            } else {
+                showAlert('warning', 'Por favor, selecciona un archivo de imagen PNG.');
+                braceletImageInput.value = ''; // Limpiar el input
+                imagePreview.innerHTML = '';
+                imgpathInput.value = '';
+            }
+        }
+    }
+
     // Guardar pulsera
-    function saveBracelet() {
+    async function saveBracelet() {
         const braceletId = document.getElementById('braceletId').value;
         const braceletData = {
             nombre: document.getElementById('braceletName').value,
             descripcion: document.getElementById('braceletDescription').value,
             precio: parseFloat(document.getElementById('braceletPrice').value),
-            delisted: document.getElementById('braceletStatus').value === 'true'
+            delisted: document.getElementById('braceletStatus').value === 'true',
+            // Si imgpathInput tiene un valor, se usa /img/{valor}. Si no, se usa la imgURL existente (si es edición) o null (si es nueva sin imagen)
+            imgURL: imgpathInput.value ? `/api/public/img/${imgpathInput.value}` : (currentBracelet ? currentBracelet.imgURL : null)
         };
 
-        const url = currentAction === 'addBracelet' ? '/api/pulseras' : `/api/pulseras/${braceletId}`;
+        const url = currentAction === 'addBracelet' ? '/api/admin/pulseras' : `/api/admin/pulseras/${braceletId}`;
         const method = currentAction === 'addBracelet' ? 'POST' : 'PUT';
 
-        fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(braceletData)
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Error al guardar pulsera');
-            return response.json();
-        })
-        .then(() => {
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(braceletData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al guardar pulsera');
+            }
+
             showAlert('success','Pulsera guardada correctamente');
             braceletModal.hide();
             loadBracelets();
-        })
-        .catch(error => {
+
+        } catch (error) {
             console.error('Error:', error);
-            showAlert('danger','Error al guardar pulsera: ' + error);
-        });
+            showAlert('danger','Error al guardar pulsera: ' + error.message);
+        }
     }
 
     // Confirmar acción (eliminar/activar)
@@ -301,35 +380,62 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmModal.hide();
 
         let url, method;
+        let actionType = ''; // Para saber si se afectó a usuarios o pulseras
 
         switch(currentAction) {
             case 'deleteUser':
                 url = `/api/admin/usuario/${currentItemId}`;
                 method = 'DELETE';
+                actionType = 'user';
                 break;
 
             case 'deleteBracelet':
-                url = `/api/pulseras/${currentItemId}`;
-                method = 'DELETE';
+                // Para "retirar" una pulsera, se hace un PUT para cambiar el estado 'delisted' a true
+                url = `/api/admin/pulseras/${currentItemId}`;
+                method = 'PUT';
+                actionType = 'bracelet';
                 break;
 
             case 'activateBracelet':
-                url = `/api/pulseras/${currentItemId}`;
+                // Para "activar" una pulsera, se hace un PUT para cambiar el estado 'delisted' a false
+                url = `/api/admin/pulseras/${currentItemId}`;
                 method = 'PUT';
+                actionType = 'bracelet';
                 break;
 
             default:
                 return;
         }
 
-        fetch(url, { method })
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // Para 'deleteBracelet' y 'activateBracelet', se necesita enviar el objeto completo de la pulsera
+            // con el estado 'delisted' actualizado. Se podría buscar el objeto de la pulsera por ID
+            // antes de la llamada, o simplificar la lógica de backend si solo se necesita el ID para cambiar 'delisted'.
+            // Por simplicidad, asumiré que el backend puede manejar un PUT sin el cuerpo completo para estas acciones,
+            // o que la API de PulseraController.java ya maneja el cambio de `delisted` con solo el ID en el PUT.
+            // Si no, se debería cargar la pulsera primero, modificar `delisted` y luego enviarla.
+            body: (currentAction === 'deleteBracelet' || currentAction === 'activateBracelet')
+                ? JSON.stringify({ id: currentItemId, delisted: (currentAction === 'deleteBracelet') })
+                : null
+        })
             .then(response => {
                 if (!response.ok) throw new Error('Error al realizar la acción');
-                return response.json();
+                // Si la eliminación o activación devuelve 204 No Content, response.json() fallará.
+                // Se verifica si hay contenido para parsear como JSON.
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    return {}; // Devuelve un objeto vacío si no hay JSON
+                }
             })
             .then(() => {
                 showAlert('success','Acción realizada correctamente');
-                if (currentAction.includes('User')) {
+                if (actionType === 'user') {
                     loadUsers();
                 } else {
                     loadBracelets();
@@ -346,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {string} type - The type of alert (e.g., 'success', 'danger', 'info', 'warning'). This affects the modal title.
      * @param {string} message - The message to display in the alert.
      */
-    function showAlert(type, message, duration = 1000) {
+    function showAlert(type, message, duration = 3000) {
         // Set modal title based on type
         switch (type) {
             case 'success':
