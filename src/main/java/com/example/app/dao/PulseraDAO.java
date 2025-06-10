@@ -81,6 +81,12 @@ public class PulseraDAO {
         );
     }
 
+    public List<Pulsera> findByIds(List<ObjectId> ids) {
+        List<Pulsera> list = new ArrayList<>();
+        col.find(eq("_id", ids)).forEach(d -> list.add(docToPulsera(d)));
+        return list;
+    }
+
     /*
     public List<Pulsera> findAvailableByMaxPrice(double maxPrice) {
         List<Pulsera> list = new ArrayList<>();

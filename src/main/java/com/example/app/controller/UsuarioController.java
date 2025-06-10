@@ -1,79 +1,78 @@
 package com.example.app.controller;
 
+import com.example.app.dao.BuildsDAO;
+import com.example.app.dao.FavoritosDAO;
+import com.example.app.dao.PulseraDAO;
+import com.example.app.dao.UsuarioDAO;
+import com.example.app.model.Favoritos;
+import com.example.app.model.Pulsera;
+import com.example.app.model.Usuario;
+import com.example.app.model.Builds;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.bson.types.ObjectId;
-import com.example.app.dao.UsuarioDAO;
-import com.example.app.model.Usuario;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static spark.Spark.*;
 
 public class UsuarioController {
 
-    private final UsuarioDAO dao;
+    // --- DAO Dependencies ---
+    private final UsuarioDAO usuarioDao;
+    private final FavoritosDAO favoritosDao;
+    private final BuildsDAO buildsDao;
+    private final PulseraDAO pulseraDao;
 
-    // Custom Jackson ObjectMapper to handle ObjectId serialization/deserialization
     private static final ObjectMapper jackson = createObjectMapper();
 
-    private static ObjectMapper createObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        SimpleModule module = new SimpleModule();
-        // Add custom serializer and deserializer for ObjectId
-        module.addSerializer(ObjectId.class, new ObjectIdSerializer());
-        module.addDeserializer(ObjectId.class, new ObjectIdDeserializer());
-        mapper.registerModule(module);
-        return mapper;
-    }
-
-
-    public UsuarioController(UsuarioDAO dao) {
-        this.dao = dao;
+    // --- Updated Constructor ---
+    public UsuarioController(UsuarioDAO usuarioDao, FavoritosDAO favoritosDao, BuildsDAO buildsDao, PulseraDAO pulseraDao) {
+        this.usuarioDao = usuarioDao;
+        this.favoritosDao = favoritosDao;
+        this.buildsDao = buildsDao;
+        this.pulseraDao = pulseraDao;
     }
 
     public void registerRoutes() {
-        // Protect admin routes by checking the user's role
+
+        // =================================================================
+        // ===            ADMIN-ONLY ROUTES FOR USER MANAGEMENT          ===
+        // =================================================================
+
+        // Protect admin routes
         before("/api/usuario/*", (req, res) -> {
-            System.out.println("[UsuarioController] Incoming request to /api/usuario/*");
-            Usuario u = req.session().attribute("usuario"); // Assumes session attribute is named "usuario"
+            Usuario u = req.session().attribute("usuario");
             if (u == null || !"admin".equals(u.getRol())) {
-                String username = (u != null) ? u.getNombreUsuario() : "null";
-                System.out.println("[UsuarioController] Unauthorized access attempt to admin route by user: " + username);
-                halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden")));
-            } else {
-                System.out.println("[UsuarioController] Admin user " + u.getNombreUsuario() + " authorized.");
+                halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
             }
         });
 
         // Get a list of all users
         get("/api/usuarios", (req, res) -> {
             res.type("application/json");
-            List<Usuario> usuarios = dao.listAll();
-            System.out.println("[UsuarioController] Users fetched: " + usuarios.size());
-            try {
-                return jackson.writeValueAsString(usuarios);
-            } catch (Exception e) {
-                System.err.println("[UsuarioController] JSON serialization failed: " + e.getMessage());
-                res.status(500);
-                return "{\"error\":\"Failed to serialize users\"}";
-            }
+            List<Usuario> usuarios = usuarioDao.listAll();
+            return jackson.writeValueAsString(usuarios);
         });
 
-        // Create a new user
+        // Create a new user (Admin)
         post("/api/usuario", (req, res) -> {
             res.type("application/json");
-            System.out.println("[UsuarioController] POST request received for /api/usuario");
             try {
                 Usuario u = jackson.readValue(req.body(), Usuario.class);
-                dao.create(u); // DAO sets the generated ID on the object
+                usuarioDao.create(u);
                 res.status(201);
-                System.out.println("[UsuarioController] New user created: " + u.getNombreUsuario());
                 return jackson.writeValueAsString(u);
             } catch (Exception e) {
                 res.status(400);
@@ -81,56 +80,130 @@ public class UsuarioController {
             }
         });
 
-        // Update an existing user
+        // Update an existing user (Admin)
         put("/api/usuario/:id", (req, res) -> {
             res.type("application/json");
-            String usuarioIdStr = req.params(":id");
-            System.out.println("[UsuarioController] PUT request received for /api/usuario/" + usuarioIdStr);
+            // ... (your existing PUT logic is great and can remain here) ...
             try {
-                ObjectId usuarioId = new ObjectId(usuarioIdStr);
-                Usuario u = dao.findById(usuarioId).orElseThrow(() -> new NoSuchElementException("User not found"));
-
-                // Read update data from body and apply to the existing user object
+                ObjectId usuarioId = new ObjectId(req.params(":id"));
+                Usuario u = usuarioDao.findById(usuarioId).orElseThrow(() -> new NoSuchElementException("User not found"));
                 Usuario updatedInfo = jackson.readValue(req.body(), Usuario.class);
                 u.setNombreUsuario(updatedInfo.getNombreUsuario());
                 u.setRol(updatedInfo.getRol());
                 u.setCorreo(updatedInfo.getCorreo());
-                // Note: Password, favorites, and builds updates would typically be handled in separate, dedicated endpoints.
-
-                dao.update(u);
-                System.out.println("[UsuarioController] User " + usuarioIdStr + " updated.");
+                usuarioDao.update(u);
                 return jackson.writeValueAsString(u);
-            } catch (IllegalArgumentException e) {
-                res.status(400);
-                return jackson.writeValueAsString(Map.of("error", "Invalid user ID format"));
-            } catch (NoSuchElementException e) {
-                res.status(404);
-                return jackson.writeValueAsString(Map.of("error", e.getMessage()));
             } catch (Exception e) {
                 res.status(400);
-                return jackson.writeValueAsString(Map.of("error", "Invalid update data", "details", e.getMessage()));
+                return jackson.writeValueAsString(Map.of("error", "Invalid request data"));
             }
         });
 
-        // Delete a user
+        // Delete a user (Admin)
         delete("/api/usuario/:id", (req, res) -> {
-            String usuarioIdStr = req.params(":id");
-            System.out.println("[UsuarioController] DELETE request received for /api/usuario/" + usuarioIdStr);
+            // ... (your existing DELETE logic is great and can remain here) ...
             try {
-                ObjectId usuarioId = new ObjectId(usuarioIdStr);
-                dao.delete(usuarioId);
+                usuarioDao.delete(new ObjectId(req.params(":id")));
                 res.status(204);
-                System.out.println("[UsuarioController] User " + usuarioIdStr + " deleted.");
                 return "";
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                 res.status(400);
-                res.type("application/json");
-                return jackson.writeValueAsString(Map.of("error", "Invalid user ID format"));
+                return jackson.writeValueAsString(Map.of("error", "Invalid user ID"));
             }
+        });
+
+
+        // =================================================================
+        // ===        LOGGED-IN USER ROUTES FOR PROFILE MANAGEMENT       ===
+        // =================================================================
+
+        // --- FAVORITES MANAGEMENT ---
+
+        // GET the current user's favorite bracelets
+        get("/api/profile/favoritos", (req, res) -> {
+            res.type("application/json");
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
+            }
+
+            // Find the favorites document, then find the actual bracelets
+            Optional<Favoritos> favsOpt = favoritosDao.findById(currentUser.getFavoritosId());
+            if (favsOpt.isPresent()) {
+                List<ObjectId> pulseraIds = favsOpt.get().getPulserasIds();
+                List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds); // Assumes DAO has findByIds
+                return jackson.writeValueAsString(pulseras);
+            }
+            return jackson.writeValueAsString(Collections.emptyList());
+        });
+
+        // POST (add) a bracelet to the user's favorites
+        post("/api/profile/favoritos", (req, res) -> {
+            res.type("application/json");
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
+            }
+
+            Map<String, String> body = jackson.readValue(req.body(), Map.class);
+            ObjectId pulseraId = new ObjectId(body.get("pulseraId"));
+
+            // Assumes DAO handles adding the ID to the list
+            favoritosDao.addPulsera(currentUser.getFavoritosId(), pulseraId);
+            res.status(200);
+            return jackson.writeValueAsString(Map.of("success", true, "message", "Added to favorites"));
+        });
+
+        // DELETE a bracelet from the user's favorites
+        delete("/api/profile/favoritos/:pulseraId", (req, res) -> {
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
+            }
+
+            ObjectId pulseraId = new ObjectId(req.params(":pulseraId"));
+
+            // Assumes DAO handles removing the ID from the list
+            favoritosDao.removePulsera(currentUser.getFavoritosId(), pulseraId);
+            res.status(204);
+            return "";
+        });
+
+
+        // --- BUILDS MANAGEMENT ---
+
+        // GET the current user's custom-built bracelets
+        get("/api/profile/builds", (req, res) -> {
+            // This would follow the exact same logic as GET /api/profile/favoritos,
+            // but using buildsDao and currentUser.getBuildsId()
+            res.type("application/json");
+            Usuario currentUser = req.session().attribute("usuario");
+            if (currentUser == null) {
+                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
+            }
+
+            // Find the builds document, then find the actual bracelets
+            Optional<Builds> optBuild = buildsDao.findById(currentUser.getFavoritosId());
+            if (optBuild.isPresent()) {
+                List<ObjectId> pulseraIds = optBuild.get().getPulserasIds();
+                List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
+                return jackson.writeValueAsString(pulseras);
+            }
+            return jackson.writeValueAsString(Collections.emptyList());
         });
     }
 
-    // Helper classes for Jackson
+
+    // --- Helper classes for Jackson ObjectId ---
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(ObjectId.class, new ObjectIdSerializer());
+        module.addDeserializer(ObjectId.class, new ObjectIdDeserializer());
+        mapper.registerModule(module);
+        return mapper;
+    }
+
     static class ObjectIdSerializer extends JsonSerializer<ObjectId> {
         @Override
         public void serialize(ObjectId value, JsonGenerator gen, SerializerProvider serializers) throws IOException {

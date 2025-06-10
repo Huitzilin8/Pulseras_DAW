@@ -2,10 +2,8 @@
 package com.example.app;
 
 import com.example.app.controller.*;
-import com.example.app.dao.ChatDAO;
-import com.example.app.dao.MaterialDAO;
-import com.example.app.dao.UsuarioDAO;
-import com.example.app.dao.PulseraDAO;
+import com.example.app.dao.*;
+
 import static com.example.app.constants.ColorCodes.*;
 
 import com.example.app.db.DBInit;
@@ -39,13 +37,17 @@ public class App {
 
             // Initialize DAO and routes
             UsuarioDAO userDao = new UsuarioDAO(client);
+            FavoritosDAO favDao = new FavoritosDAO(client);
+            BuildsDAO buildDao = new BuildsDAO(client);
+            PulseraDAO pulseraDAO = new PulseraDAO(client);
+
             new AuthController(userDao).registerRoutes();
-            new UsuarioController(userDao).registerRoutes();
+            new UsuarioController(userDao, favDao, buildDao, pulseraDAO).registerRoutes();
 
             MaterialDAO materialDao = new MaterialDAO(client);
             new MaterialController(materialDao).registerRoutes();
 
-            PulseraDAO pulseraDAO = new PulseraDAO(client);
+
             new PulseraController(pulseraDAO).registerRoutes();
 
         } catch (MongoException e) {

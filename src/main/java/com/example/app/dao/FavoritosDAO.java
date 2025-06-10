@@ -7,7 +7,8 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import java.util.List;
+import static com.mongodb.client.model.Updates.pull;
+import static com.mongodb.client.model.Updates.push;
 import java.util.Optional;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -45,5 +46,13 @@ public class FavoritosDAO {
         col.updateOne(eq("_id", f.getId()),
                 new Document("$set", new Document("pulserasIds", f.getPulserasIds()))
         );
+    }
+
+    public void addPulsera(ObjectId favoritosId, ObjectId pulserasId) {
+        col.updateOne(eq("_id", favoritosId), push("pulserasId", pulserasId));
+    }
+
+    public void removePulsera(ObjectId favoritosId, ObjectId pulseraId) {
+        col.updateOne(eq("_id", favoritosId), pull("pulserasIds", pulseraId));
     }
 }
