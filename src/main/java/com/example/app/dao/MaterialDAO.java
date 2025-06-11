@@ -1,3 +1,4 @@
+// File: src/main/java/com/example/app/dao/MaterialDAO.java
 package com.example.app.dao;
 
 import com.example.app.model.Material;

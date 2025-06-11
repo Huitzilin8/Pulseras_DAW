@@ -4,9 +4,13 @@ package com.example.app.controller;
 import com.example.app.model.Material;      // Your Material model
 import com.example.app.model.Usuario;       // Your Usuario model for checking roles
 import com.example.app.dao.MaterialDAO;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.bson.types.ObjectId;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,7 +20,8 @@ import static spark.Spark.*;
 public class MaterialController {
 
     private final MaterialDAO materialDao;
-    private static final ObjectMapper jackson = new ObjectMapper();
+    private static final ObjectMapper jackson = createObjectMapper();
+
 
     public MaterialController(MaterialDAO materialDao) {
         this.materialDao = materialDao;
@@ -80,6 +85,25 @@ public class MaterialController {
             }
         });
 
+        // GET a single material by its ID (Public)
+        get("/api/admin/materials/:id", (req, res) -> {
+            res.type("application/json");
+            try {
+                String id = req.params(":id");
+                Optional<Material> materialOpt = materialDao.findById(new ObjectId(id));
+
+                if (materialOpt.isPresent()) {
+                    return jackson.writeValueAsString(materialOpt.get());
+                } else {
+                    res.status(404); // Not Found
+                    return jackson.writeValueAsString(Map.of("error", "Material not found"));
+                }
+            } catch (IllegalArgumentException e) {
+                res.status(400); // Bad Request
+                return jackson.writeValueAsString(Map.of("error", "Invalid material ID format"));
+            }
+        });
+
         // PUT (update) an existing material
         put("/api/admin/materials/:id", (req, res) -> {
             res.type("application/json");
@@ -108,5 +132,31 @@ public class MaterialController {
                 return jackson.writeValueAsString(Map.of("error", "Invalid material ID"));
             }
         });
+    }
+
+
+
+    // --- Helper classes for Jackson ObjectId ---
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(ObjectId.class, new UsuarioController.ObjectIdSerializer());
+        module.addDeserializer(ObjectId.class, new UsuarioController.ObjectIdDeserializer());
+        mapper.registerModule(module);
+        return mapper;
+    }
+
+    static class ObjectIdSerializer extends JsonSerializer<ObjectId> {
+        @Override
+        public void serialize(ObjectId value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(value.toHexString());
+        }
+    }
+
+    static class ObjectIdDeserializer extends JsonDeserializer<ObjectId> {
+        @Override
+        public ObjectId deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return new ObjectId(p.getText());
+        }
     }
 }

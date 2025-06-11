@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Obtener pulseras del backend
     function fetchBracelets() {
-        fetch("/api/pulseras")
+        fetch("/api/public/pulseras")
             .then(response => {
                 if (!response.ok) throw new Error("Error al cargar las pulseras");
                 return response.json();

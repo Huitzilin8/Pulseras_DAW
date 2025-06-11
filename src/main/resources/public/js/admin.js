@@ -190,10 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 materials.forEach(material => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${material.id}</td>
+                        <td>${material.id.substring(18)}</td>
                         <td>${material.nombre || 'N/A'}</td>
                         <td>${material.descripcion || 'N/A'}</td>
-                        <td>$${material.precio?.toFixed(2) || '0.00'}</td>
+                        <td>${material.tamanoMm} mm</td>
                         <td>${material.cantidadInventario || 0}</td>
                         <td class="action-buttons">
                             <button class="btn btn-sm btn-warning edit-material" data-id="${material.id}">
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('materialId').value = material.id;
                     document.getElementById('materialName').value = material.nombre;
                     document.getElementById('materialDescription').value = material.descripcion;
-                    document.getElementById('materialPrice').value = material.precio;
+                    document.getElementById('materialSize').value = material.tamanoMm;
                     document.getElementById('materialInventory').value = material.cantidadInventario;
                 })
                 .catch(error => {

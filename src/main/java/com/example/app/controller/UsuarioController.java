@@ -139,7 +139,7 @@ public class UsuarioController {
         // --- FAVORITES MANAGEMENT ---
 
         // GET the current user's favorite bracelets
-        get("/api/user/usuario/profile/favoritos", (req, res) -> {
+        get("/api/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
