@@ -40,6 +40,7 @@ public class PulseraController {
 
     // A simple helper class to represent the incoming JSON for a custom design
     private static class DesignRequest {
+        public String nombre;
         public List<String> materialesIds;
         public Double circunferencia;
         // Add any other custom fields you need
@@ -128,7 +129,7 @@ public class PulseraController {
             res.type("application/json");
 
             // 1. Authentication: Ensure user is logged in
-            Usuario currentUser = req.session().attribute("user");
+            Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
                 res.status(401); // Unauthorized
                 return jackson.writeValueAsString(Map.of("error", "You must be logged in to design a bracelet"));
@@ -168,7 +169,7 @@ public class PulseraController {
                 customPulsera.setMaterialesIds(design.materialesIds.stream().map(ObjectId::new).toList());
                 customPulsera.setCircunferencia(design.circunferencia);
                 customPulsera.setPrecio(calculatedPrice);
-                customPulsera.setDescripcion("Custom design by " + currentUser.getNombreUsuario());
+                customPulsera.setDescripcion(design.nombre);
                 customPulsera.setUserBuilt(true);
                 customPulsera.setDelisted(true);
                 pulseraDao.create(customPulsera); // Create the bracelet first to get its ID

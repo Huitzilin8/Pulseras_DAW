@@ -171,13 +171,12 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSpinner.classList.remove('d-none');
 
         try {
-            // This is the new endpoint you will need to create on your backend
             const response = await fetch('/api/user/pulseras/design', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     nombre: braceletName,
-                    materialIds: materialIds
+                    materialesIds: materialIds
                 })
             });
 
