@@ -1,3 +1,4 @@
+// File: src/main/resources/public/js/admin.js
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del DOM
     const usersTableBody = document.getElementById('usersTableBody');
