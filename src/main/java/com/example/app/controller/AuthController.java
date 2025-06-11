@@ -103,6 +103,12 @@ public class AuthController {
             return null;
         });
 
+        get("/builder", (req, res) ->{
+            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /builder" + RESET);
+            res.redirect("/builder.html");
+            return null;
+        });
+
         // En AuthController.java
         get("/api/auth/status", (req, res) -> {
             try {
