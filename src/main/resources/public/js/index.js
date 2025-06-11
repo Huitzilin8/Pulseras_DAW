@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         galleryContainer.innerHTML = filteredBracelets.map(bracelet => `
-            <div class="col-md-4 col-lg-3 mb-4">
+            <div class="col-md-4 col-lg-4 mb-4">
                 <div class="card h-100">
                     <img src="${bracelet.imgURL}"
                          class="card-img-top" alt="${bracelet.nombre}">
