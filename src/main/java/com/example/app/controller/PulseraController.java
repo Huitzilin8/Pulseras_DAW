@@ -171,7 +171,7 @@ public class PulseraController {
                 customPulsera.setPrecio(calculatedPrice);
                 customPulsera.setDescripcion(design.nombre);
                 customPulsera.setUserBuilt(true);
-                customPulsera.setDelisted(true);
+                customPulsera.setDelisted(false);
                 pulseraDao.create(customPulsera); // Create the bracelet first to get its ID
 
                 // 5. Link to User's Builds

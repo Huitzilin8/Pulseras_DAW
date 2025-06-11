@@ -96,6 +96,17 @@ public class BuildsDAO {
         col.updateOne(eq("_id", buildsId), pull("pulserasIds", pulseraId));
     }
 
+    public Builds createEmpty() {
+        System.out.println("Creating a new empty builds collection.");
+        Builds newBuilds = new Builds();
+        // Initialize with an empty list to prevent null pointer issues
+        newBuilds.setPulserasIds(new java.util.ArrayList<>());
+
+        // Use the existing create method to handle DB insertion and ID setting
+        create(newBuilds);
+
+        return newBuilds; // The object now has the ID set by the create() method
+    }
     /**
      * Deletes a builds collection by its ObjectId.
      * @param id The ObjectId of the collection to delete.

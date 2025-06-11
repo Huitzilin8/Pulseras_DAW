@@ -199,90 +199,46 @@ public class UsuarioController {
 
         // GET the current user's custom-built bracelets
         get("/api/usuario/profile/builds", (req, res) -> {
-            res.type("application/json");
+            res.type("application/json"); // Set default content type for successful responses
 
-            // 1. Verificar autenticación
             Usuario currentUser = req.session().attribute("usuario");
+
             if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
+                res.status(401); // Set the HTTP status code
+                // Ensure content type is set specifically for this error response
+                res.type("application/json");
+                // Return the JSON string as the response body
+                return jackson.writeValueAsString(Map.of("error", "Unauthorized", "message", "Porfavor inicia sesión para ver tus builds."));
             }
 
             try {
-                // 2. Obtener usuario actualizado desde la base de datos (crucial for up-to-date data)
-                Optional<Usuario> userOpt = usuarioDao.findById(currentUser.getId());
-                if (userOpt.isEmpty()) {
-                    halt(404, jackson.writeValueAsString(Map.of("error", "User not found")));
-                }
-                currentUser = userOpt.get();
-
-                // --- Crucial logging for current user's builds data ---
-                System.out.println("--- After DB Fetch (for Builds) ---");
-                System.out.println("Retrieved User ID: " + currentUser.getId());
-                System.out.println("Retrieved User Name: " + currentUser.getNombreUsuario());
-                System.out.println("Retrieved Builds ID: " + currentUser.getBuildsId());
-                System.out.println("-----------------------------------");
-                // --- END Crucial logging ---
-
-                // 3. Check if the user has a builds ID assigned
+                // Check if the user has a builds ID assigned
                 ObjectId buildsId = currentUser.getBuildsId();
                 if (buildsId == null) {
                     // User is logged in but doesn't have a builds collection yet (e.g., new user)
-                    System.out.println("[Builds API] User has no buildsId. Returning empty list.");
+                    // Return an empty list, as there are no builds to show.
                     return jackson.writeValueAsString(Collections.emptyList());
                 }
-
-                // --- Crucial logging before buildsDao lookup ---
-                System.out.println("--- Before buildsDao.findById() ---");
-                System.out.println("Searching for Builds document with ID: " + buildsId);
-                System.out.println("-----------------------------------");
-                // --- END Crucial logging ---
 
                 Optional<Builds> optBuild = buildsDao.findById(buildsId);
 
-                // --- Crucial logging after buildsDao lookup ---
-                System.out.println("--- After buildsDao.findById() ---");
-                System.out.println("Builds document found? " + optBuild.isPresent());
-                System.out.println("----------------------------------");
-                // --- END Crucial logging ---
-
-
                 if (optBuild.isPresent()) {
                     List<ObjectId> pulseraIds = optBuild.get().getPulserasIds();
-
-                    // --- Crucial logging before pulseraDao lookup for builds ---
-                    System.out.println("--- Before pulseraDao.findByIds() (for Builds) ---");
-                    System.out.println("Passing Pulsera IDs to DAO: " + pulseraIds);
-                    System.out.println("-------------------------------------------------");
-                    // --- END Crucial logging ---
-
-                    // If pulseraIds is null or empty, return an empty list immediately
-                    if (pulseraIds == null || pulseraIds.isEmpty()) {
-                        System.out.println("[Builds API] Builds document found, but pulseraIds list is empty or null. Returning empty list.");
-                        return jackson.writeValueAsString(Collections.emptyList());
-                    }
-
                     List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
-
-                    // --- Crucial logging after pulseraDao lookup for builds ---
-                    System.out.println("--- After pulseraDao.findByIds() (for Builds) ---");
-                    System.out.println("Result from pulseraDao.findByIds(): " + pulseras);
-                    System.out.println("Number of Pulseras found for builds: " + (pulseras != null ? pulseras.size() : "null (or no results)"));
-                    System.out.println("-------------------------------------------------");
-                    // --- END Crucial logging ---
-
-                    // Return the found pulseras (or an empty list if null)
-                    return jackson.writeValueAsString(pulseras != null ? pulseras : Collections.emptyList());
+                    return jackson.writeValueAsString(pulseras);
                 } else {
-                    // If the buildsId exists but the Builds document itself is not found
-                    System.out.println("[Builds API] Builds ID exists, but document not found. Returning empty list.");
+                    // If the buildsId exists but the document itself is not found (e.g., deleted manually)
+                    // This is an edge case, but good to handle.
                     return jackson.writeValueAsString(Collections.emptyList());
                 }
             } catch (Exception e) {
+                // Catch any other unexpected exceptions (e.g., database issues, JSON serialization errors)
                 System.err.println("Error loading user builds: " + e.getMessage());
-                e.printStackTrace(); // Log the stack trace for detailed debugging
+                e.printStackTrace(); // Log the stack trace for debugging
 
-                halt(500, jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", "An unexpected error occurred while fetching your custom builds. Please try again.")));
-                return null; // halt stops execution, so this return is technically unreachable but good practice for clarity.
+                res.status(500); // Internal Server Error
+                res.type("application/json"); // Ensure content type is JSON
+                return jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", "An unexpected error occurred while fetching your custom builds."));
             }
         });
         // --- PROFILE UPDATE MANAGEMENT ---
