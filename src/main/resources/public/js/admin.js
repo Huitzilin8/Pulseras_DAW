@@ -1,10 +1,11 @@
-    // File: src/main/resources/js/admin.js
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del DOM
     const usersTableBody = document.getElementById('usersTableBody');
     const braceletsCardContainer = document.getElementById('braceletsCardContainer');
+    const materialsTableBody = document.getElementById('materialsTableBody'); // Nuevo
     const usersSpinner = document.getElementById('usersSpinner');
     const braceletsSpinner = document.getElementById('braceletsSpinner');
+    const materialsSpinner = document.getElementById('materialsSpinner'); // Nuevo
     const braceletImageInput = document.getElementById('braceletImage');
     const imagePreview = document.getElementById('imagePreview');
     const imgpathInput = document.getElementById('imgpath');
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modales
     const userModal = new bootstrap.Modal(document.getElementById('userModal'));
     const braceletModal = new bootstrap.Modal(document.getElementById('braceletModal'));
+    const materialModal = new bootstrap.Modal(document.getElementById('materialModal')); // Nuevo
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
     const myAlertModal = new bootstrap.Modal(document.getElementById('myAlertModal'));
     const myAlertModalLabel = document.getElementById('myAlertModalLabel');
@@ -26,12 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAdminStatus();
     loadUsers();
     loadBracelets();
+    loadMaterials(); // Cargar materiales al inicio
 
     // Event Listeners
     document.getElementById('addUserBtn').addEventListener('click', () => showUserModal('add'));
     document.getElementById('addBraceletBtn').addEventListener('click', () => showBraceletModal('add'));
+    document.getElementById('addMaterialBtn').addEventListener('click', () => showMaterialModal('add')); // Nuevo
     document.getElementById('saveUserBtn').addEventListener('click', saveUser);
     document.getElementById('saveBraceletBtn').addEventListener('click', saveBracelet);
+    document.getElementById('saveMaterialBtn').addEventListener('click', saveMaterial); // Nuevo
     document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
 
     if (braceletImageInput) {
@@ -106,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         braceletsSpinner.style.display = 'block';
         braceletsCardContainer.innerHTML = ''; // Limpiar el contenedor de cartas
 
-        fetch('/api/pulseras')
+        fetch('/api/public/pulseras')
             .then(response => {
                 if (!response.ok) throw new Error('Error al cargar pulseras');
                 return response.json();
@@ -118,6 +123,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageUrl = bracelet.imgURL ? bracelet.imgURL : ''; // Usa la URL de la imagen si existe
                     const imageHtml = imageUrl ? `<img src="${imageUrl}" class="card-img-top" alt="${bracelet.nombre}">` : `<div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Sin Imagen</div>`;
 
+                    // Determinar el texto y color del botón basado en el estado 'delisted'
+                    const actionButtonClass = bracelet.delisted ? 'btn-success' : 'btn-danger';
+                    const actionButtonIcon = bracelet.delisted ? 'bi-check-circle' : 'bi-trash';
+                    const actionButtonText = bracelet.delisted ? 'Reactivar' : 'Retirar';
+                    const actionButtonDataAction = bracelet.delisted ? 'activateBracelet' : 'delistBracelet'; // Cambiado 'deleteBracelet' a 'delistBracelet' para mayor claridad
+
                     card.innerHTML = `
                         <div class="card h-100">
                             ${imageHtml}
@@ -128,10 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <p class="card-text"><small class="text-muted">${bracelet.delisted ? 'Retirada' : 'Disponible'}</small></p>
                                 <div class="action-buttons">
                                     <button class="btn btn-sm btn-warning edit-bracelet" data-id="${bracelet.id}">
-                                        <i class="bi bi-pencil"></i>
+                                        <i class="bi bi-pencil"></i> Editar
                                     </button>
-                                    <button class="btn btn-sm btn-danger delete-bracelet" data-id="${bracelet.id}">
-                                        <i class="bi bi-trash"></i>
+                                    <button class="btn btn-sm ${actionButtonClass} bracelet-status-toggle" data-id="${bracelet.id}" data-action="${actionButtonDataAction}">
+                                        <i class="bi ${actionButtonIcon}"></i> ${actionButtonText}
                                     </button>
                                 </div>
                             </div>
@@ -145,15 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     btn.addEventListener('click', () => showBraceletModal('edit', btn.dataset.id));
                 });
 
-                document.querySelectorAll('.delete-bracelet').forEach(btn => {
-                    btn.addEventListener('click', () => showConfirmModal(
-                        // Se verifica si la pulsera está 'delisted' para determinar si la acción es reactivar o retirar
-                        bracelets.find(b => b.id === btn.dataset.id)?.delisted ? 'activateBracelet' : 'deleteBracelet',
-                        btn.dataset.id,
-                        bracelets.find(b => b.id === btn.dataset.id)?.delisted ?
+                document.querySelectorAll('.bracelet-status-toggle').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const bracelet = bracelets.find(b => b.id === btn.dataset.id);
+                        const action = bracelet.delisted ? 'activateBracelet' : 'delistBracelet'; // Usar 'delistBracelet' para la acción de retirar
+                        const message = bracelet.delisted ?
                             '¿Estás seguro de que deseas reactivar esta pulsera?' :
-                            '¿Estás seguro de que deseas retirar esta pulsera?'
-                    ));
+                            '¿Estás seguro de que deseas retirar esta pulsera? Esto la ocultará de la vista pública.';
+                        showConfirmModal(action, btn.dataset.id, message);
+                    });
                 });
             })
             .catch(error => {
@@ -162,6 +173,55 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .finally(() => {
                 braceletsSpinner.style.display = 'none';
+            });
+    }
+
+    // Cargar Materiales (NUEVA FUNCIÓN)
+    function loadMaterials() {
+        materialsSpinner.style.display = 'block';
+        materialsTableBody.innerHTML = '';
+
+        fetch('/api/public/materials') // Endpoint para obtener materiales
+            .then(response => {
+                if (!response.ok) throw new Error('Error al cargar materiales');
+                return response.json();
+            })
+            .then(materials => {
+                materials.forEach(material => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${material.id}</td>
+                        <td>${material.nombre || 'N/A'}</td>
+                        <td>${material.descripcion || 'N/A'}</td>
+                        <td>$${material.precio?.toFixed(2) || '0.00'}</td>
+                        <td>${material.cantidadInventario || 0}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning edit-material" data-id="${material.id}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-material" data-id="${material.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    materialsTableBody.appendChild(row);
+                });
+
+                // Agregar event listeners a los botones
+                document.querySelectorAll('.edit-material').forEach(btn => {
+                    btn.addEventListener('click', () => showMaterialModal('edit', btn.dataset.id));
+                });
+
+                document.querySelectorAll('.delete-material').forEach(btn => {
+                    btn.addEventListener('click', () => showConfirmModal('deleteMaterial', btn.dataset.id, '¿Estás seguro de que deseas eliminar este material?'));
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger','Error al cargar materiales: '+ error);
+            })
+            .finally(() => {
+                materialsSpinner.style.display = 'none';
             });
     }
 
@@ -219,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentItemId = braceletId;
 
             // Cargar datos de la pulsera
-            fetch(`/api/pulseras/${braceletId}`)
+            fetch(`/api/admin/pulseras/${braceletId}`)
                 .then(response => response.json())
                 .then(bracelet => {
                     currentBracelet = bracelet; // Guardar la pulsera actual
@@ -244,6 +304,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         braceletModal.show();
+    }
+
+    // Mostrar modal de material (NUEVA FUNCIÓN)
+    function showMaterialModal(action, materialId = null) {
+        const modalTitle = document.getElementById('materialModalTitle');
+        document.getElementById('materialForm').reset(); // Limpiar el formulario
+
+        if (action === 'add') {
+            modalTitle.textContent = 'Agregar Nuevo Material';
+            currentAction = 'addMaterial';
+        } else {
+            modalTitle.textContent = 'Editar Material';
+            currentAction = 'editMaterial';
+            currentItemId = materialId;
+
+            // Cargar datos del material
+            fetch(`/api/admin/materials/${materialId}`)
+                .then(response => response.json())
+                .then(material => {
+                    document.getElementById('materialId').value = material.id;
+                    document.getElementById('materialName').value = material.nombre;
+                    document.getElementById('materialDescription').value = material.descripcion;
+                    document.getElementById('materialPrice').value = material.precio;
+                    document.getElementById('materialInventory').value = material.cantidadInventario;
+                })
+                .catch(error => {
+                    console.error('Error al cargar material:', error);
+                    showAlert('danger','Error al cargar datos del material: ' + error);
+                });
+        }
+
+        materialModal.show();
     }
 
     // Mostrar modal de confirmación
@@ -375,12 +467,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Confirmar acción (eliminar/activar)
+    // Guardar Material (NUEVA FUNCIÓN)
+    async function saveMaterial() {
+        const materialId = document.getElementById('materialId').value;
+        const materialData = {
+            nombre: document.getElementById('materialName').value,
+            descripcion: document.getElementById('materialDescription').value,
+            tamanoMm: parseFloat(document.getElementById('materialSize').value),
+            cantidadInventario: parseInt(document.getElementById('materialInventory').value, 10)
+        };
+
+        const url = currentAction === 'addMaterial' ? '/api/admin/materials' : `/api/admin/materials/${materialId}`;
+        const method = currentAction === 'addMaterial' ? 'POST' : 'PUT';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(materialData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al guardar material');
+            }
+
+            showAlert('success', 'Material guardado correctamente');
+            materialModal.hide();
+            loadMaterials();
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('danger', 'Error al guardar material: ' + error.message);
+        }
+    }
+
+    // Confirmar acción (eliminar/activar/retirar)
     function confirmAction() {
         confirmModal.hide();
 
         let url, method;
-        let actionType = ''; // Para saber si se afectó a usuarios o pulseras
+        let actionType = ''; // Para saber si se afectó a usuarios, pulseras o materiales
+        let bodyData = null; // Para el cuerpo de la solicitud PUT
 
         switch(currentAction) {
             case 'deleteUser':
@@ -389,18 +518,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 actionType = 'user';
                 break;
 
-            case 'deleteBracelet':
-                // Para "retirar" una pulsera, se hace un PUT para cambiar el estado 'delisted' a true
+            case 'delistBracelet': // Ahora se usa para retirar
                 url = `/api/admin/pulseras/${currentItemId}`;
-                method = 'PUT';
+                method = 'PUT'; // Se cambia a PUT para actualizar 'delisted'
                 actionType = 'bracelet';
+                bodyData = { delisted: true }; // Enviar solo el estado 'delisted'
                 break;
 
-            case 'activateBracelet':
-                // Para "activar" una pulsera, se hace un PUT para cambiar el estado 'delisted' a false
+            case 'activateBracelet': // Ahora se usa para reactivar
                 url = `/api/admin/pulseras/${currentItemId}`;
-                method = 'PUT';
+                method = 'PUT'; // Se cambia a PUT para actualizar 'delisted'
                 actionType = 'bracelet';
+                bodyData = { delisted: false }; // Enviar solo el estado 'delisted'
+                break;
+
+            case 'deleteMaterial': // Nueva acción para eliminar material
+                url = `/api/admin/materials/${currentItemId}`;
+                method = 'DELETE';
+                actionType = 'material';
                 break;
 
             default:
@@ -412,38 +547,34 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            // Para 'deleteBracelet' y 'activateBracelet', se necesita enviar el objeto completo de la pulsera
-            // con el estado 'delisted' actualizado. Se podría buscar el objeto de la pulsera por ID
-            // antes de la llamada, o simplificar la lógica de backend si solo se necesita el ID para cambiar 'delisted'.
-            // Por simplicidad, asumiré que el backend puede manejar un PUT sin el cuerpo completo para estas acciones,
-            // o que la API de PulseraController.java ya maneja el cambio de `delisted` con solo el ID en el PUT.
-            // Si no, se debería cargar la pulsera primero, modificar `delisted` y luego enviarla.
-            body: (currentAction === 'deleteBracelet' || currentAction === 'activateBracelet')
-                ? JSON.stringify({ id: currentItemId, delisted: (currentAction === 'deleteBracelet') })
-                : null
+            body: bodyData ? JSON.stringify(bodyData) : null
         })
             .then(response => {
-                if (!response.ok) throw new Error('Error al realizar la acción');
-                // Si la eliminación o activación devuelve 204 No Content, response.json() fallará.
-                // Se verifica si hay contenido para parsear como JSON.
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || 'Error al realizar la acción');
+                    });
+                }
                 const contentType = response.headers.get("content-type");
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     return response.json();
                 } else {
-                    return {}; // Devuelve un objeto vacío si no hay JSON
+                    return {};
                 }
             })
             .then(() => {
                 showAlert('success','Acción realizada correctamente');
                 if (actionType === 'user') {
                     loadUsers();
-                } else {
+                } else if (actionType === 'bracelet') {
                     loadBracelets();
+                } else if (actionType === 'material') { // Recargar materiales
+                    loadMaterials();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showAlert('danger','Error al realizar la acción: ' + error);
+                showAlert('danger','Error al realizar la acción: ' + error.message);
             });
     }
 
