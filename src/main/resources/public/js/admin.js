@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const braceletImageInput = document.getElementById('braceletImage');
     const imagePreview = document.getElementById('imagePreview');
     const imgpathInput = document.getElementById('imgpath');
+    const braceletMaterialsCheckboxes = document.getElementById('braceletMaterialsCheckboxes'); // Nuevo
 
     // Modales
     const userModal = new bootstrap.Modal(document.getElementById('userModal'));
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentAction = '';
     let currentItemId = '';
     let currentBracelet = null; // Para almacenar los datos de la pulsera actual al editar
+    let allMaterials = []; // Para almacenar todos los materiales disponibles
 
     // Inicialización
     checkAdminStatus();
@@ -177,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Cargar Materiales (NUEVA FUNCIÓN)
+    // Cargar Materiales
     function loadMaterials() {
         materialsSpinner.style.display = 'block';
         materialsTableBody.innerHTML = '';
@@ -188,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(materials => {
+                allMaterials = materials; // Guardar todos los materiales
                 materials.forEach(material => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -270,10 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
         imagePreview.innerHTML = ''; // Limpiar la vista previa de la imagen
         imgpathInput.value = ''; // Limpiar el path de la imagen
         currentBracelet = null; // Resetear la pulsera actual
+        braceletMaterialsCheckboxes.innerHTML = ''; // Limpiar checkboxes de materiales
 
         if (action === 'add') {
             modalTitle.textContent = 'Agregar Nueva Pulsera';
             currentAction = 'addBracelet';
+            populateMaterialsCheckboxes([]); // Pasa un array vacío para nueva pulsera
         } else {
             modalTitle.textContent = 'Editar Pulsera';
             currentAction = 'editBracelet';
@@ -297,6 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             imgpathInput.value = imgPathMatch[1];
                         }
                     }
+                    // Cargar y marcar los materiales asociados a la pulsera
+                    populateMaterialsCheckboxes(bracelet.materiales || []);
                 })
                 .catch(error => {
                     console.error('Error al cargar pulsera:', error);
@@ -305,6 +312,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         braceletModal.show();
+    }
+
+    // Función para poblar los checkboxes de materiales
+    function populateMaterialsCheckboxes(selectedMaterials) {
+        braceletMaterialsCheckboxes.innerHTML = ''; // Limpiar cualquier checkbox previo
+
+        if (allMaterials.length === 0) {
+            braceletMaterialsCheckboxes.innerHTML = '<p>No hay materiales disponibles. Agrega materiales primero.</p>';
+            return;
+        }
+
+        allMaterials.forEach(material => {
+            const div = document.createElement('div');
+            div.classList.add('form-check', 'form-check-inline');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.classList.add('form-check-input');
+            checkbox.id = `material-${material.id}`;
+            checkbox.value = material.id;
+            // Marcar el checkbox si el material está en la lista de materiales seleccionados de la pulsera
+            if (selectedMaterials.some(sm => sm.id === material.id)) {
+                checkbox.checked = true;
+            }
+
+            const label = document.createElement('label');
+            label.classList.add('form-check-label');
+            label.htmlFor = `material-${material.id}`;
+            label.textContent = `${material.nombre} (${material.tamanoMm}mm)`;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            braceletMaterialsCheckboxes.appendChild(div);
+        });
     }
 
     // Mostrar modal de material (NUEVA FUNCIÓN)
@@ -432,13 +472,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guardar pulsera
     async function saveBracelet() {
         const braceletId = document.getElementById('braceletId').value;
+
+        // Recolectar IDs de materiales seleccionados
+        const selectedMaterialIds = Array.from(braceletMaterialsCheckboxes.querySelectorAll('input[type="checkbox"]:checked'))
+                                       .map(checkbox => checkbox.value);
+
         const braceletData = {
             nombre: document.getElementById('braceletName').value,
             descripcion: document.getElementById('braceletDescription').value,
             precio: parseFloat(document.getElementById('braceletPrice').value),
             delisted: document.getElementById('braceletStatus').value === 'true',
-            // Si imgpathInput tiene un valor, se usa /img/{valor}. Si no, se usa la imgURL existente (si es edición) o null (si es nueva sin imagen)
-            imgURL: imgpathInput.value ? `/api/public/img/${imgpathInput.value}` : (currentBracelet ? currentBracelet.imgURL : null)
+            imgURL: imgpathInput.value ? `/api/public/img/${imgpathInput.value}` : (currentBracelet ? currentBracelet.imgURL : null),
+            materialesIds: selectedMaterialIds // Añadir los materiales seleccionados
         };
 
         const url = currentAction === 'addBracelet' ? '/api/admin/pulseras' : `/api/admin/pulseras/${braceletId}`;
@@ -468,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Guardar Material (NUEVA FUNCIÓN)
+    // Guardar Material
     async function saveMaterial() {
         const materialId = document.getElementById('materialId').value;
         const materialData = {

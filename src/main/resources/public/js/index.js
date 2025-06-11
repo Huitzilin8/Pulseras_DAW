@@ -1,6 +1,12 @@
 // File: src/main/resources/public/js/main.js
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    // Get references to the modal elements
+    const myAlertModal = new bootstrap.Modal(document.getElementById('myAlertModal'));
+    const myAlertModalLabel = document.getElementById('myAlertModalLabel');
+    const myAlertModalBody = document.getElementById('myAlertModalBody');
+
     // Elementos del DOM
     const galleryContainer = document.getElementById("galleryContainer");
     const searchInput = document.getElementById("searchInput");
@@ -20,33 +26,75 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Enter") filterBracelets();
     });
 
-    // Obtener pulseras del backend
-    function fetchBracelets() {
-        fetch("/api/public/pulseras")
-            .then(response => {
-                if (!response.ok) throw new Error("Error al cargar las pulseras");
-                return response.json();
-            })
-            .then(data => {
-                allBracelets = data;
-                filteredBracelets = [...allBracelets];
-                renderBracelets();
-            })
-            .catch(error => {
-                console.error("Error:", error);
+    async function fetchBracelets() {
+        try {
+            // 1. Obtener todas las pulseras disponibles (públicas)
+            const braceletsResponse = await fetch("/api/public/pulseras");
+            if (!braceletsResponse.ok) {
+                // Si la respuesta no es OK, intenta leer el error del servidor
+                const errorData = await braceletsResponse.json();
+                throw new Error(errorData.error || "Error al cargar las pulseras.");
+            }
+            allBracelets = await braceletsResponse.json();
+
+            // 2. Verificar el estado de autenticación del usuario
+            const authStatusResponse = await fetch("/api/auth/status");
+            if (authStatusResponse.ok) {
+                const authStatus = await authStatusResponse.json();
+
+                // Si el usuario está autenticado, obtener sus pulseras favoritas
+                if (authStatus.authenticated) {
+                    try {
+                        const favoritesResponse = await fetch("/api/usuario/profile/favoritos");
+                        if (!favoritesResponse.ok) {
+                            // Si hay un error al cargar favoritos (ej. 401 si la sesión expiró), manejarlo.
+                            const errorData = await favoritesResponse.json();
+                            console.warn("Advertencia: No se pudieron cargar los favoritos del usuario:", errorData.error);
+                            // No lanzamos un error fatal aquí para que las pulseras públicas se sigan mostrando
+                            // pero sin el estado de favorito correcto si hubo un problema.
+                        } else {
+                            const favoriteBracelets = await favoritesResponse.json();
+                            // Extraer solo los IDs de las pulseras favoritas para `markFavorites`
+                            const favoriteIds = favoriteBracelets.map(b => b.id);
+                            markFavorites(allBracelets, favoriteIds);
+                        }
+                    } catch (favError) {
+                        console.warn("Advertencia: Error de red al cargar favoritos:", favError);
+                        // Similar, no lanzamos un error fatal.
+                    }
+                }
+            } else {
+                console.warn("Advertencia: No se pudo verificar el estado de autenticación.");
+                // Si no podemos verificar la autenticación, asumimos que no hay favoritos.
+            }
+
+            // 3. Filtrar y renderizar las pulseras
+            filteredBracelets = [...allBracelets]; // Inicializar filteredBracelets con todas las pulseras
+            renderBracelets(); // Llama a tu función para renderizar las pulseras en la UI
+
+        } catch (error) {
+            console.error("Error en fetchBracelets():", error);
+            // Asegúrate de que `galleryContainer` esté definido en tu script
+            if (galleryContainer) {
                 galleryContainer.innerHTML = `
-                    <div class="alert alert-danger col-12">
+                    <div class="alert alert-danger col-12" role="alert">
                         Error al cargar las pulseras: ${error.message}
                     </div>`;
-            });
+            }
+        }
     }
-
-    // Filtrar pulseras basado en el input de búsqueda
+    // Función para marcar las pulseras favoritas
+    function markFavorites(bracelets, favoriteIds) {
+        bracelets.forEach(bracelet => {
+            bracelet.favorito = favoriteIds.some(id => id === bracelet.id);
+        });
+    }
+        // Filtrar pulseras basado en el input de búsqueda
     function filterBracelets() {
         const searchTerm = searchInput.value.toLowerCase();
         filteredBracelets = allBracelets.filter(bracelet =>
             bracelet.nombre.toLowerCase().includes(searchTerm) ||
-            bracelet.materiales.some(m => m.toLowerCase().includes(searchTerm))
+            bracelet.materialesIds.some(m => m.toLowerCase().includes(searchTerm))
         );
 
         renderBracelets();
@@ -66,22 +114,19 @@ document.addEventListener("DOMContentLoaded", () => {
         galleryContainer.innerHTML = filteredBracelets.map(bracelet => `
             <div class="col-md-4 col-lg-3 mb-4">
                 <div class="card h-100">
-                    <img src="${bracelet.imagenUrl || 'https://via.placeholder.com/300x200?text=Pulsera'}"
+                    <img src="${bracelet.imgURL}"
                          class="card-img-top" alt="${bracelet.nombre}">
                     <div class="card-body">
                         <h5 class="card-title">${bracelet.nombre}</h5>
                         <p class="card-text text-muted">
-                            <small>${bracelet.materiales.join(", ")}</small>
+                            <small>${bracelet.materialesIds.join(", ")}</small>
                         </p>
                         <p class="card-text">$${bracelet.precio.toFixed(2)}</p>
                     </div>
                     <div class="card-footer bg-white border-top-0">
                         <button class="btn btn-sm btn-outline-primary toggle-favorite" data-id="${bracelet.id}">
                             <i class="bi ${bracelet.favorito ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
-                        </button>
-                        <button class="btn btn-sm btn-primary float-end add-to-cart" data-id="${bracelet.id}">
-                            <i class="bi bi-cart-plus"></i> Añadir
-                        </button>
+                        </button
                     </div>
                 </div>
             </div>
@@ -91,73 +136,104 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".toggle-favorite").forEach(btn => {
             btn.addEventListener("click", toggleFavorite);
         });
-
-        document.querySelectorAll(".add-to-cart").forEach(btn => {
-            btn.addEventListener("click", addToCart);
-        });
     }
 
     // Manejar favoritos
-    function toggleFavorite(e) {
+    async function toggleFavorite(e) {
         const braceletId = e.currentTarget.getAttribute("data-id");
-        const isFavorite = e.currentTarget.querySelector("i").classList.contains("bi-heart-fill");
+        const iconElement = e.currentTarget.querySelector("i");
+        const isFavorite = iconElement.classList.contains("bi-heart-fill");
 
-        fetch(`/api/pulseras/${braceletId}/favorito`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ favorito: !isFavorite })
-        })
-        .then(response => {
-            if (response.ok) {
-                // Actualizar UI localmente sin recargar todo
-                const icon = e.currentTarget.querySelector("i");
-                icon.classList.toggle("bi-heart");
-                icon.classList.toggle("bi-heart-fill");
-                icon.classList.toggle("text-danger");
+        try {
+            const response = await fetch(`/api/usuario/pulseras/${braceletId}/favorito`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                // El cuerpo no es estrictamente necesario para el backend que creamos,
+                // ya que el backend simplemente "togglea" el estado.
+                // body: JSON.stringify({ favorito: !isFavorite })
+            });
 
-                // Actualizar el estado
-                const bracelet = allBracelets.find(b => b.id === braceletId);
-                if (bracelet) bracelet.favorito = !isFavorite;
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Error del servidor al alternar favorito:", errorData);
+
+                if (response.status === 401) {
+                    showAlert('danger', 'No estás autenticado. Redirigiendo a login...',100000);
+                    myAlertModal._element.addEventListener('hidden.bs.modal', function () {
+                        window.location.href = '/login';
+                    }, { once: true }); // Use { once: true } to remove the listener after it fires
+                    return; // Detener la ejecución
+                } else if (response.status === 404) {
+                    showAlert('warning', 'La pulsera no se encontró.');
+                } else {
+                    showAlert('danger', errorData.error || "Error al actualizar el favorito.");
+                }
+                return; // Detener la ejecución si hay un error HTTP
             }
-        })
-        .catch(error => console.error("Error:", error));
+
+            // Si la respuesta es exitosa (response.ok es true)
+            const responseData = await response.json(); // Para obtener el mensaje del backend
+            console.log("Respuesta de favorito:", responseData);
+
+            // Actualizar UI localmente sin recargar todo
+            iconElement.classList.toggle("bi-heart");
+            iconElement.classList.toggle("bi-heart-fill");
+            iconElement.classList.toggle("text-danger");
+
+            // Opcional: Actualizar el estado en tu array global `allBracelets`
+            const bracelet = allBracelets.find(b => b.id === braceletId);
+            if (bracelet) {
+                bracelet.favorito = responseData.isFavorite; // Usa el valor retornado por el backend
+            }
+
+            // Mostrar alerta de éxito
+            showAlert('success', responseData.message || "Favorito actualizado correctamente.");
+
+        } catch (error) {
+            console.error("Error en toggleFavorite():", error);
+            showAlert('danger', "Error de conexión: " + error.message);
+        }
     }
 
-    // Añadir al carrito
-    function addToCart(e) {
-        const braceletId = e.currentTarget.getAttribute("data-id");
+    /**
+     * Displays a Bootstrap modal alert.
+     * @param {string} type - The type of alert (e.g., 'success', 'danger', 'info', 'warning'). This affects the modal title.
+     * @param {string} message - The message to display in the alert.
+     */
+    function showAlert(type, message, duration = 1000) {
+        // Set modal title based on type
+        switch (type) {
+            case 'success':
+                myAlertModalLabel.textContent = 'Éxito';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-success text-white';
+                break;
+            case 'danger':
+                myAlertModalLabel.textContent = 'Error';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-danger text-white';
+                break;
+            case 'info':
+                myAlertModalLabel.textContent = 'Información';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-info text-white';
+                break;
+            case 'warning':
+                myAlertModalLabel.textContent = 'Advertencia';
+                myAlertModalLabel.parentElement.className = 'modal-header bg-warning text-dark';
+                break;
+            default:
+                myAlertModalLabel.textContent = 'Alerta';
+                myAlertModalLabel.parentElement.className = 'modal-header';
+        }
 
-        fetch("/api/carrito", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pulseraId: braceletId, cantidad: 1 })
-        })
-        .then(response => {
-            if (response.ok) {
-                showAlert("success", "Pulsera añadida al carrito");
-            } else {
-                throw new Error("Error al añadir al carrito");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            showAlert("danger", error.message);
-        });
-    }
+        // Set modal body message
+        myAlertModalBody.textContent = message;
 
-    // Mostrar notificación
-    function showAlert(type, message) {
-        const alertDiv = document.createElement("div");
-        alertDiv.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
-        alertDiv.style.zIndex = "1000";
-        alertDiv.innerHTML = message;
+        // Show the modal
+        myAlertModal.show();
 
-        document.body.appendChild(alertDiv);
-
+        // Set timeout to hide the modal after duration (default: 3000ms = 3 seconds)
         setTimeout(() => {
-            alertDiv.classList.add("fade");
-            setTimeout(() => alertDiv.remove(), 500);
-        }, 3000);
+            myAlertModal.hide();
+        }, duration);
     }
 
     // Verificar estado de autenticación

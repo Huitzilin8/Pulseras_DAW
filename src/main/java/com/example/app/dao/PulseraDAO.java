@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.mongodb.client.model.Filters.and;
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 
 public class PulseraDAO {
 
@@ -60,6 +59,30 @@ public class PulseraDAO {
         return Optional.ofNullable(d).map(this::docToPulsera);
     }
 
+    // --- THE NEW METHOD YOU NEED TO ADD ---
+    public List<Pulsera> findByIds(List<ObjectId> ids) {
+        if (ids == null || ids.isEmpty()) {
+            System.out.println("[PulseraDAO] findByIds called with empty or null list of IDs. Returning empty list.");
+            return new ArrayList<>();
+        }
+
+        System.out.println("[PulseraDAO] Searching for pulseras with IDs: " + ids);
+        List<Pulsera> pulseras = new ArrayList<>();
+        try {
+            // Use the $in operator to find documents where _id is in the provided list
+            col.find(in("_id", ids))
+                    .map(this::docToPulsera) // Map each Document to a Pulsera object
+                    .into(pulseras); // Collect all results into the list
+        } catch (Exception e) {
+            System.err.println("[PulseraDAO] Error finding pulseras by IDs: " + e.getMessage());
+            e.printStackTrace(); // Log the stack trace for debugging
+            // Decide how to handle the error, returning empty list is often okay
+            return new ArrayList<>();
+        }
+        System.out.println("[PulseraDAO] Found " + pulseras.size() + " pulseras for given IDs.");
+        return pulseras;
+    }
+
     public List<Pulsera> findAvailable() {
         List<Pulsera> list = new ArrayList<>();
         col.find(eq("delisted", false)).forEach(d -> list.add(docToPulsera(d)));
@@ -84,12 +107,6 @@ public class PulseraDAO {
                         .append("userBuilt", p.getUserBuilt())
                 )
         );
-    }
-
-    public List<Pulsera> findByIds(List<ObjectId> ids) {
-        List<Pulsera> list = new ArrayList<>();
-        col.find(eq("_id", ids)).forEach(d -> list.add(docToPulsera(d)));
-        return list;
     }
 
     /*

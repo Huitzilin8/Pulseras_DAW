@@ -140,8 +140,8 @@ public class MaterialController {
     private static ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(ObjectId.class, new UsuarioController.ObjectIdSerializer());
-        module.addDeserializer(ObjectId.class, new UsuarioController.ObjectIdDeserializer());
+        module.addSerializer(ObjectId.class, new MaterialController.ObjectIdSerializer());
+        module.addDeserializer(ObjectId.class, new MaterialController.ObjectIdDeserializer());
         mapper.registerModule(module);
         return mapper;
     }

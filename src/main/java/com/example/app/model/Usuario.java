@@ -3,6 +3,7 @@ package com.example.app.model;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 
 import org.bson.types.ObjectId;
 
@@ -12,7 +13,7 @@ public class Usuario implements Serializable {
     private String hashContrasena;
     private String correo;
     private String rol; // "admin" o "usuario"
-    private ObjectId favoritosId;
+    private List<ObjectId> favoritosId;
     private ObjectId buildsId;
     private ObjectId chatId;
     private Instant ultimoLogin;
@@ -60,11 +61,11 @@ public class Usuario implements Serializable {
         this.rol = rol;
     }
 
-    public ObjectId getFavoritosId() {
+    public List<ObjectId> getFavoritosId() {
         return favoritosId;
     }
 
-    public void setFavoritosId(ObjectId favoritosId) {
+    public void setFavoritosId(List<ObjectId> favoritosId) {
         this.favoritosId = favoritosId;
     }
 

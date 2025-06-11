@@ -8,7 +8,10 @@ import com.example.app.model.Material;
 import com.example.app.dao.UsuarioDAO;
 import com.example.app.model.Pulsera;
 import com.example.app.model.Usuario;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.bson.types.ObjectId;
 import spark.utils.IOUtils;
 
@@ -33,7 +36,7 @@ public class PulseraController {
     private final UsuarioDAO usuarioDao;
     private final BuildsDAO buildsDao;
     private final MaterialDAO materialDao;
-    private static final ObjectMapper jackson = new ObjectMapper();
+    private static final ObjectMapper jackson = createObjectMapper();
 
     // A simple helper class to represent the incoming JSON for a custom design
     private static class DesignRequest {
@@ -193,7 +196,6 @@ public class PulseraController {
             }
         });
 
-
         // === ADMIN-ONLY ROUTES ===
 
         // POST a new pre-made bracelet (Admin)
@@ -208,6 +210,7 @@ public class PulseraController {
                 return jackson.writeValueAsString(pulsera);
             } catch (Exception e) {
                 res.status(400);
+                System.out.println(e);
                 return jackson.writeValueAsString(Map.of("error", "Invalid bracelet data"));
             }
         });
@@ -233,6 +236,61 @@ public class PulseraController {
                 System.out.println("Image file not found: " + filename);
                 res.status(404);
                 return "Image not found.";
+            }
+        });
+
+        // En tu PulserasController.java (o similar)
+        put("/api/usuario/pulseras/:id/favorito", (req, res) -> {
+            res.type("application/json");
+
+            Usuario currentUser = req.session().attribute("usuario");
+            try {
+                ObjectId pulseraId = new ObjectId(req.params(":id"));
+
+                // 2. Obtener la pulsera para verificar su existencia
+                Optional<Pulsera> pulseraOpt = pulseraDao.findById(pulseraId);
+                if (pulseraOpt.isEmpty()) {
+                    res.status(404);
+                    return jackson.writeValueAsString(Map.of("error", "Pulsera no encontrada."));
+                }
+                Pulsera pulsera = pulseraOpt.get();
+
+                // 3. Obtener el usuario actual con sus favoritos
+                // Es crucial obtener una versión actualizada del usuario para modificar su lista de favoritos.
+                Optional<Usuario> userOpt = usuarioDao.findById(currentUser.getId());
+                if (userOpt.isEmpty()) {
+                    res.status(500); // Esto no debería pasar si currentUser proviene de la sesión
+                    return jackson.writeValueAsString(Map.of("error", "No se pudo encontrar la información del usuario."));
+                }
+                currentUser = userOpt.get(); // Usamos la versión actualizada del usuario
+
+                List<ObjectId> favoritos = currentUser.getFavoritosId();
+                if (favoritos == null) {
+                    favoritos = new ArrayList<>();
+                }
+
+                // 4. Toggle de favorito: agregar o remover la pulsera
+                if (favoritos.contains(pulseraId)) {
+                    favoritos.remove(pulseraId); // Si ya es favorita, la removemos
+                    res.status(200);
+                    return jackson.writeValueAsString(Map.of("message", "Pulsera eliminada de favoritos.", "isFavorite", false));
+                } else {
+                    favoritos.add(pulseraId); // Si no es favorita, la agregamos
+                    res.status(200);
+                    return jackson.writeValueAsString(Map.of("message", "Pulsera agregada a favoritos.", "isFavorite", true));
+                }
+
+            } catch (IllegalArgumentException e) {
+                res.status(400);
+                return jackson.writeValueAsString(Map.of("error", "Formato de ID de pulsera inválido."));
+            } catch (Exception e) {
+                System.out.println("Error al alternar favorito: " + e.getMessage());
+                res.status(500);
+                return jackson.writeValueAsString(Map.of("error", "Ocurrió un error interno al actualizar favoritos."));
+            } finally {
+                // 5. Guardar los cambios en la lista de favoritos del usuario
+                // Asegúrate de que tu UsuarioDAO tenga un metodo para actualizar un usuario.
+                usuarioDao.update(currentUser);
             }
         });
 
@@ -296,5 +354,29 @@ public class PulseraController {
                 return jackson.writeValueAsString(Map.of("error", "Invalid bracelet ID"));
             }
         });
+    }
+
+    // --- Helper classes for Jackson ObjectId ---
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(ObjectId.class, new PulseraController.ObjectIdSerializer());
+        module.addDeserializer(ObjectId.class, new PulseraController.ObjectIdDeserializer());
+        mapper.registerModule(module);
+        return mapper;
+    }
+
+    static class ObjectIdSerializer extends JsonSerializer<ObjectId> {
+        @Override
+        public void serialize(ObjectId value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(value.toHexString());
+        }
+    }
+
+    static class ObjectIdDeserializer extends JsonDeserializer<ObjectId> {
+        @Override
+        public ObjectId deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return new ObjectId(p.getText());
+        }
     }
 }

@@ -29,6 +29,14 @@ public class AuthController {
             }
         });
 
+        // Protect admin routes
+        before("/api/usuario/*", (req, res) -> {
+            Usuario u = req.session().attribute("usuario");
+            if (u == null) {
+                halt(403, jackson.writeValueAsString(Map.of("error", "Necesitas tener una cuenta para tener favoritos")));
+            }
+        });
+
         get("/admin", (req, res) -> {
             // Panel de administración, pendiente logica autenticación
             System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /admin" + RESET);

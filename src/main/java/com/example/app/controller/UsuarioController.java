@@ -141,51 +141,57 @@ public class UsuarioController {
         // GET the current user's favorite bracelets
         get("/api/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
+
+            // 1. Verificar autenticación
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
                 halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
             }
 
-            // Find the favorites document, then find the actual bracelets
-            Optional<Favoritos> favsOpt = favoritosDao.findById(currentUser.getFavoritosId());
-            if (favsOpt.isPresent()) {
-                List<ObjectId> pulseraIds = favsOpt.get().getPulserasIds();
-                List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds); // Assumes DAO has findByIds
-                return jackson.writeValueAsString(pulseras);
+            try {
+                // 2. Obtener usuario actualizado desde la base de datos
+                Optional<Usuario> userOpt = usuarioDao.findById(currentUser.getId());
+                if (userOpt.isEmpty()) {
+                    halt(404, jackson.writeValueAsString(Map.of("error", "User not found")));
+                }
+                currentUser = userOpt.get();
+
+                // --- Crucial logging here ---
+                System.out.println("--- After DB Fetch ---");
+                System.out.println("Retrieved User ID: " + currentUser.getId());
+                System.out.println("Retrieved User Name: " + currentUser.getNombreUsuario()); // Sanity check
+                System.out.println("Retrieved Favoritos IDs: " + currentUser.getFavoritosId());
+                System.out.println("Is Favoritos IDs list null? " + (currentUser.getFavoritosId() == null));
+                System.out.println("Is Favoritos IDs list empty? " + (currentUser.getFavoritosId() != null && currentUser.getFavoritosId().isEmpty()));
+                System.out.println("----------------------");
+
+                // 3. Obtener la lista de IDs de pulseras favoritas
+                List<ObjectId> pulseraIds = currentUser.getFavoritosId();
+
+                // 4. Si no hay favoritos, devolver lista vacía
+                if (pulseraIds == null || pulseraIds.isEmpty()) {
+                    return jackson.writeValueAsString(Collections.emptyList());
+                }
+                // --- NEW CRUCIAL LOGGING ---
+                System.out.println("--- Before pulseraDao.findByIds() ---");
+                System.out.println("Passing pulseraIds to DAO: " + pulseraIds);
+                System.out.println("------------------------------------");
+
+                // 5. Buscar las pulseras correspondientes
+                List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
+                System.out.println("--- After pulseraDao.findByIds() ---");
+                System.out.println("Result from pulseraDao.findByIds(): " + pulseras);
+                System.out.println("Number of Pulseras found by DAO: " + (pulseras != null ? pulseras.size() : "null (or no results)"));
+                System.out.println("------------------------------------");
+                // --- END NEW CRUCIAL LOGGING ---
+                // 6. Devolver las pulseras encontradas (puede ser menos si algunas IDs son inválidas)
+                return jackson.writeValueAsString(pulseras != null ? pulseras : Collections.emptyList());
+
+            } catch (Exception e) {
+                System.err.println("Error fetching favorites: " + e.getMessage());
+                halt(500, jackson.writeValueAsString(Map.of("error", "Internal server error")));
+                return jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", e.getMessage()));
             }
-            return jackson.writeValueAsString(Collections.emptyList());
-        });
-
-        // POST (add) a bracelet to the user's favorites
-        post("/api/usuario/profile/favoritos", (req, res) -> {
-            res.type("application/json");
-            Usuario currentUser = req.session().attribute("usuario");
-            if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
-            }
-
-            Map<String, String> body = jackson.readValue(req.body(), Map.class);
-            ObjectId pulseraId = new ObjectId(body.get("pulseraId"));
-
-            // Assumes DAO handles adding the ID to the list
-            favoritosDao.addPulsera(currentUser.getFavoritosId(), pulseraId);
-            res.status(200);
-            return jackson.writeValueAsString(Map.of("success", true, "message", "Added to favorites"));
-        });
-
-        // DELETE a bracelet from the user's favorites
-        delete("/api/usuario/profile/favoritos/:pulseraId", (req, res) -> {
-            Usuario currentUser = req.session().attribute("usuario");
-            if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized")));
-            }
-
-            ObjectId pulseraId = new ObjectId(req.params(":pulseraId"));
-
-            // Assumes DAO handles removing the ID from the list
-            favoritosDao.removePulsera(currentUser.getFavoritosId(), pulseraId);
-            res.status(204);
-            return "";
         });
 
 

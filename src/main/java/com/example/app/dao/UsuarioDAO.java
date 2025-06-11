@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static com.example.app.constants.ColorCodes.*;
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.in;
 
 /**
  * DAO for the Usuario class, handling all database operations.
@@ -45,7 +46,10 @@ public class UsuarioDAO {
         u.setHashContrasena(d.getString("hashContrasena"));
         u.setCorreo(d.getString("correo"));
         u.setRol(d.getString("rol"));
-        u.setFavoritosId(d.getObjectId("favoritosId"));
+        // Manejo de favoritos como List<ObjectId>
+        List<ObjectId> favoritosIds = d.getList("favoritosId", ObjectId.class);
+        u.setFavoritosId(favoritosIds != null ? favoritosIds : new ArrayList<>());
+
         u.setBuildsId(d.getObjectId("buildsId"));
         return u;
     }
