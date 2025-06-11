@@ -20,7 +20,7 @@ public class ColorController {
 
     public void registerRoutes() {
         // Security filter for admin-only write operations
-        before("/api/colors/*", (req, res) -> {
+        before("/api/admin/colors/*", (req, res) -> {
             if (!req.requestMethod().equals("GET")) {
                 Usuario currentUser = req.session().attribute("usuario");
                 if (currentUser == null || !"admin".equals(currentUser.getRol())) {
@@ -30,14 +30,14 @@ public class ColorController {
         });
 
         // GET all colors
-        get("/api/colors", (req, res) -> {
+        get("/api/admin/colors", (req, res) -> {
             res.type("application/json");
             List<Color> colors = colorDao.listAll();
             return jackson.writeValueAsString(colors);
         });
 
         // POST a new color (Admin)
-        post("/api/colors", (req, res) -> {
+        post("/api/admin/colors", (req, res) -> {
             res.type("application/json");
             Color newColor = jackson.readValue(req.body(), Color.class);
             colorDao.create(newColor);

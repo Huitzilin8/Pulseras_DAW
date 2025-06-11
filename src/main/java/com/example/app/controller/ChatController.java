@@ -32,7 +32,7 @@ public class ChatController {
     public void registerRoutes() {
 
         // GET or Create a chat session. This is the new entry point.
-        get("/api/chat/session", (req, res) -> {
+        get("/api/public/chat/session", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
 
@@ -74,7 +74,7 @@ public class ChatController {
         });
 
         // Get all messages for a specific chat
-        get("/api/chat/:chatId/messages", (req, res) -> {
+        get("/api/public/chat/:chatId/messages", (req, res) -> {
             res.type("application/json");
             // Authorization is needed here to ensure the user can access this chat
             verifyChatAccess(req);
@@ -85,7 +85,7 @@ public class ChatController {
         });
 
         // Post a new message to a chat
-        post("/api/chat/:chatId/messages", (req, res) -> {
+        post("/api/public/chat/:chatId/messages", (req, res) -> {
             res.type("application/json");
             verifyChatAccess(req); // Verify access before allowing a post
 
@@ -113,7 +113,7 @@ public class ChatController {
         // --- ADMIN ROUTES ---
 
         // Get all active chats (for admin dashboard)
-        get("/api/chats/active", (req, res) -> {
+        get("/api/admin/chats/active", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null || !"admin".equals(currentUser.getRol())) {

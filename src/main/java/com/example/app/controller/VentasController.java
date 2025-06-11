@@ -33,7 +33,7 @@ public class VentasController {
 
     public void registerRoutes() {
         // --- Checkout Process ---
-        post("/api/checkout", (req, res) -> {
+        post("/api/user/checkout", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {
@@ -58,7 +58,7 @@ public class VentasController {
         });
 
         // --- Order History ---
-        get("/api/profile/orders", (req, res) -> {
+        get("/api/user/profile/orders", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {

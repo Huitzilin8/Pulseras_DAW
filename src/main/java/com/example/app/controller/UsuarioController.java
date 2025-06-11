@@ -138,7 +138,7 @@ public class UsuarioController {
         // =================================================================
 
         // Protect profile routes (if not already protected)
-        before("/api/usuario/*", (req, res) -> {
+        before("/api/user/usuario/*", (req, res) -> {
             Usuario u = req.session().attribute("usuario");
             if (u == null) {
                 halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
@@ -148,7 +148,7 @@ public class UsuarioController {
         // --- FAVORITES MANAGEMENT ---
 
         // GET the current user's favorite bracelets
-        get("/api/usuario/profile/favoritos", (req, res) -> {
+        get("/api/user/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
             Usuario currentUser = req.session().attribute("usuario");
             if (currentUser == null) {

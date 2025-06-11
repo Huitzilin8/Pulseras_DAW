@@ -45,7 +45,7 @@ public class MaterialController {
         // === PUBLIC ROUTES ===
 
         // GET all materials
-        get("/api/materials", (req, res) -> {
+        get("/api/public/materials", (req, res) -> {
             res.type("application/json");
             try {
                 List<Material> materials = materialDao.listAll();
@@ -57,7 +57,7 @@ public class MaterialController {
         });
 
         // GET a single material by its ID
-        get("/api/materials/:id", (req, res) -> {
+        get("/api/public/materials/:id", (req, res) -> {
             res.type("application/json");
             try {
                 String id = req.params(":id");
@@ -79,7 +79,7 @@ public class MaterialController {
         // === ADMIN-ONLY ROUTES ===
 
         // POST (create) a new material
-        post("/api/materials", (req, res) -> {
+        post("/api/admin/materials", (req, res) -> {
             res.type("application/json");
             try {
                 Material newMaterial = jackson.readValue(req.body(), Material.class);
@@ -100,7 +100,7 @@ public class MaterialController {
         });
 
         // PUT (update) an existing material
-        put("/api/materials/:id", (req, res) -> {
+        put("/api/admin/materials/:id", (req, res) -> {
             res.type("application/json");
             try {
                 String id = req.params(":id");
@@ -116,7 +116,7 @@ public class MaterialController {
         });
 
         // DELETE a material by ID
-        delete("/api/materials/:id", (req, res) -> {
+        delete("/api/admin/materials/:id", (req, res) -> {
             try {
                 String id = req.params(":id");
                 materialDao.delete(new ObjectId(id));

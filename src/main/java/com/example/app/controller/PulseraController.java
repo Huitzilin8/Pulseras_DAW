@@ -76,7 +76,7 @@ public class PulseraController {
         // === PUBLIC ROUTES ===
 
         // GET all available bracelets (with optional filtering)
-        get("/api/pulseras", (req, res) -> {
+        get("/api/public/pulseras", (req, res) -> {
             res.type("application/json");
             try {
                 // Example of a simple filter: ?maxPrice=50.0
@@ -99,7 +99,7 @@ public class PulseraController {
         });
 
         // GET a single bracelet by ID
-        get("/api/pulseras/:id", (req, res) -> {
+        get("/api/public/pulseras/:id", (req, res) -> {
             res.type("application/json");
             try {
                 ObjectId id = new ObjectId(req.params(":id"));
@@ -121,7 +121,7 @@ public class PulseraController {
         // === USER-SPECIFIC ROUTE ===
 
         // POST a new custom design
-        post("/api/pulseras/design", (req, res) -> {
+        post("/api/user/pulseras/design", (req, res) -> {
             res.type("application/json");
 
             // 1. Authentication: Ensure user is logged in
