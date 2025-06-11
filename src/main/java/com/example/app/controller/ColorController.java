@@ -19,16 +19,6 @@ public class ColorController {
     }
 
     public void registerRoutes() {
-        // Security filter for admin-only write operations
-        before("/api/admin/colors/*", (req, res) -> {
-            if (!req.requestMethod().equals("GET")) {
-                Usuario currentUser = req.session().attribute("usuario");
-                if (currentUser == null || !"admin".equals(currentUser.getRol())) {
-                    halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
-                }
-            }
-        });
-
         // GET all colors
         get("/api/admin/colors", (req, res) -> {
             res.type("application/json");

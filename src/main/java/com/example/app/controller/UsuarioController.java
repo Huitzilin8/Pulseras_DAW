@@ -136,15 +136,6 @@ public class UsuarioController {
         // =================================================================
         // ===        LOGGED-IN USER ROUTES FOR PROFILE MANAGEMENT       ===
         // =================================================================
-
-        // Protect profile routes (if not already protected)
-        before("/api/user/usuario/*", (req, res) -> {
-            Usuario u = req.session().attribute("usuario");
-            if (u == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
-            }
-        });
-
         // --- FAVORITES MANAGEMENT ---
 
         // GET the current user's favorite bracelets

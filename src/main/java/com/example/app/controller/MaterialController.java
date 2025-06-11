@@ -23,25 +23,6 @@ public class MaterialController {
     }
 
     public void registerRoutes() {
-
-        // === SECURITY FILTER ===
-        // This 'before' filter runs before any POST, PUT, or DELETE request to /api/materials/*.
-        // It checks if the user in the session is an admin.
-        before("/api/materials/*", (req, res) -> {
-            // We only protect write methods. GET is public.
-            if (!req.requestMethod().equals("GET")) {
-                // Assumes your AuthController stores the logged-in user in the session
-                // with the key "user" and it's a 'Usuario' object.
-                Usuario currentUser = req.session().attribute("user");
-
-                if (currentUser == null || !"admin".equals(currentUser.getRol())) {
-                    // If not an admin, stop the request and send a "Forbidden" error.
-                    halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
-                }
-            }
-        });
-
-
         // === PUBLIC ROUTES ===
 
         // GET all materials
