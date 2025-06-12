@@ -187,7 +187,7 @@ public class PulseraController {
             } catch (Exception e) {
                 // This will catch parsing errors, halt() exceptions, etc.
                 // The halt() method already sets the response, so this might just log.
-                System.err.println("Error during custom design processing: " + e.getMessage());
+                System.err.println("[PulseraController] Error during custom design processing: " + e.getMessage());
                 // If the error was not a halt, return a generic error
                 if (!res.raw().isCommitted()) {
                     res.status(500);

@@ -80,7 +80,7 @@ public class UsuarioController {
                 res.status(400); // Bad Request
                 return jackson.writeValueAsString(Map.of("error", "ID de usuario inválido", "details", e.getMessage()));
             } catch (Exception e) {
-                System.err.println("Error getting user by ID: " + e.getMessage());
+                System.err.println("[UsuarioController] Error getting user by ID: " + e.getMessage());
                 e.printStackTrace();
                 res.status(500); // Internal Server Error
                 return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al obtener el usuario"));
@@ -167,7 +167,7 @@ public class UsuarioController {
                 return jackson.writeValueAsString(pulseras != null ? pulseras : Collections.emptyList());
 
             } catch (Exception e) {
-                System.err.println("Error fetching favorites: " + e.getMessage());
+                System.err.println("[UsuarioController] Error fetching favorites: " + e.getMessage());
                 halt(500, jackson.writeValueAsString(Map.of("error", "Internal server error")));
                 return jackson.writeValueAsString(Map.of("error", "Internal Server Error", "message", e.getMessage()));
             }
@@ -212,7 +212,7 @@ public class UsuarioController {
                 }
             } catch (Exception e) {
                 // Catch any other unexpected exceptions (e.g., database issues, JSON serialization errors)
-                System.err.println("Error loading user builds: " + e.getMessage());
+                System.err.println("[UsuarioController] Error loading user builds: " + e.getMessage());
                 e.printStackTrace(); // Log the stack trace for debugging
 
                 res.status(500); // Internal Server Error
@@ -252,7 +252,7 @@ public class UsuarioController {
                 res.status(200);
                 return jackson.writeValueAsString(Map.of("success", true, "message", "Nombre de usuario actualizado exitosamente."));
             } catch (Exception e) {
-                System.err.println("Error updating username: " + e.getMessage());
+                System.err.println("[UsuarioController] Error updating username: " + e.getMessage());
                 e.printStackTrace();
                 res.status(500);
                 return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al actualizar el nombre de usuario."));
@@ -301,7 +301,7 @@ public class UsuarioController {
                 res.status(200);
                 return jackson.writeValueAsString(Map.of("success", true, "message", "Contraseña actualizada exitosamente."));
             } catch (Exception e) {
-                System.err.println("Error updating password: " + e.getMessage());
+                System.err.println("[UsuarioController] Error updating password: " + e.getMessage());
                 e.printStackTrace();
                 res.status(500);
                 return jackson.writeValueAsString(Map.of("error", "Error interno del servidor al actualizar la contraseña."));
