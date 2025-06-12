@@ -30,7 +30,7 @@ public class BuildsDAO {
     public BuildsDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp");
         col = db.getCollection("builds");
-        System.out.println("Successfully initialized connection to 'builds' collection.");
+        System.out.println("[BuildsDAO] [BuildsDAO] Successfully initialized connection to 'builds' collection.");
     }
 
     /**
@@ -50,13 +50,13 @@ public class BuildsDAO {
      * @param b The Builds object to create.
      */
     public void create(Builds b) {
-        System.out.println("Trying to create new builds collection.");
+        System.out.println("[BuildsDAO] Trying to create new builds collection.");
         Document d = new Document()
                 .append("pulserasIds", b.getPulserasIds()); //
         col.insertOne(d);
         // Set the generated ObjectId back into the object
         b.setId(d.getObjectId("_id")); //
-        System.out.println("Builds collection created with ID: " + b.getId().toHexString());
+        System.out.println("[BuildsDAO] Builds collection created with ID: " + b.getId().toHexString());
     }
 
     /**
@@ -65,13 +65,13 @@ public class BuildsDAO {
      * @return An Optional containing the found Builds object, or empty if not found.
      */
     public Optional<Builds> findById(ObjectId id) {
-        System.out.println("Searching for builds collection with ID: " + id.toHexString());
+        System.out.println("[BuildsDAO] Searching for builds collection with ID: " + id.toHexString());
         Document d = col.find(eq("_id", id)).first();
         if (d == null) {
-            System.out.println("Builds collection with ID " + id.toHexString() + " not found.");
+            System.out.println("[BuildsDAO] Builds collection with ID " + id.toHexString() + " not found.");
             return Optional.empty();
         }
-        System.out.println("Builds collection found by ID: " + id.toHexString());
+        System.out.println("[BuildsDAO] Builds collection found by ID: " + id.toHexString());
         return Optional.of(docToBuilds(d));
     }
 
@@ -81,11 +81,11 @@ public class BuildsDAO {
      * @param b The Builds object with updated information.
      */
     public void update(Builds b) {
-        System.out.println("Updating builds collection with ID: " + b.getId().toHexString());
+        System.out.println("[BuildsDAO] Updating builds collection with ID: " + b.getId().toHexString());
         col.updateOne(eq("_id", b.getId()),
                 new Document("$set", new Document("pulserasIds", b.getPulserasIds())) //
         );
-        System.out.println("Builds collection with ID " + b.getId().toHexString() + " updated.");
+        System.out.println("[BuildsDAO] Builds collection with ID " + b.getId().toHexString() + " updated.");
     }
 
     public void addPulsera(ObjectId buildsId, ObjectId pulserasId) {
@@ -97,7 +97,7 @@ public class BuildsDAO {
     }
 
     public Builds createEmpty() {
-        System.out.println("Creating a new empty builds collection.");
+        System.out.println("[BuildsDAO] Creating a new empty builds collection.");
         Builds newBuilds = new Builds();
         // Initialize with an empty list to prevent null pointer issues
         newBuilds.setPulserasIds(new java.util.ArrayList<>());
@@ -112,8 +112,8 @@ public class BuildsDAO {
      * @param id The ObjectId of the collection to delete.
      */
     public void delete(ObjectId id) {
-        System.out.println("Deleting builds collection with ID: " + id.toHexString());
+        System.out.println("[BuildsDAO] Deleting builds collection with ID: " + id.toHexString());
         col.deleteOne(eq("_id", id));
-        System.out.println("Builds collection with ID " + id.toHexString() + " deleted.");
+        System.out.println("[BuildsDAO] Builds collection with ID " + id.toHexString() + " deleted.");
     }
 }

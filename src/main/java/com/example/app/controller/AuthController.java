@@ -2,7 +2,6 @@
 package com.example.app.controller;
 
 import com.example.app.dao.UsuarioDAO;
-import static com.example.app.constants.ColorCodes.*;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.example.app.model.Usuario;
@@ -23,6 +22,7 @@ public class AuthController {
 
         // Protect admin routes
         before("/api/admin/*", (req, res) -> {
+            System.out.println("[AuthController] GET request with admin priviliges ...");
             Usuario u = req.session().attribute("usuario");
             if (u == null || !"admin".equals(u.getRol())) {
                 halt(403, jackson.writeValueAsString(Map.of("error", "Forbidden: Admin access required")));
@@ -31,6 +31,7 @@ public class AuthController {
 
         // Protect admin routes
         before("/api/usuario/*", (req, res) -> {
+            System.out.println("[AuthController] GET request with user priviliges ...");
             Usuario u = req.session().attribute("usuario");
             if (u == null) {
                 halt(403, jackson.writeValueAsString(Map.of("error", "Necesitas tener una cuenta para tener favoritos")));
@@ -39,13 +40,13 @@ public class AuthController {
 
         get("/admin", (req, res) -> {
             // Panel de administración, pendiente logica autenticación
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /admin" + RESET);
+            System.out.println("[AuthController] GET request received for /admin" );
             res.redirect("/admin.html");
             return null;
         });
 
         get("/account", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /account" + RESET);
+            System.out.println("[AuthController] GET request received for /account" );
             try {
                 // Retrieve the user from the session
                 // Assuming your 'user' attribute in the session stores a Usuario object
@@ -56,12 +57,12 @@ public class AuthController {
                     // You can optionally return JSON with user data if needed for a SPA
                     // or just redirect as you were doing.
                     // For now, let's keep the redirect to account.html
-                    System.out.println(INFO + "[AuthController] " + NEUTRAL + "User '" + VARIABLE + currentUser.getNombreUsuario() + NEUTRAL + "' is authenticated. Redirecting to /account.html" + RESET);
+                    System.out.println("[AuthController] User '"  + currentUser.getNombreUsuario()  + "' is authenticated. Redirecting to /account.html" );
                     res.redirect("/account.html");
                     return null; // Important: return null after redirect to stop further processing in Spark
                 } else {
                     // User is NOT authenticated.
-                    System.out.println(ERROR + "[AuthController] " + NEUTRAL + "Unauthenticated access to /account. Redirecting to /login.html" + RESET);
+                    System.out.println("[AuthController] Unauthenticated access to /account. Redirecting to /login.html" );
                     // Option 1: Redirect to login page
                     res.redirect("/login.html");
                     return null; // Important: return null after redirect
@@ -79,7 +80,7 @@ public class AuthController {
                 */
                 }
             } catch (Exception e) {
-                System.err.println(ERROR + "[AuthController] Error processing /account request: " + e.getMessage() + RESET);
+                System.err.println("[AuthController] Error processing /account request: " + e.getMessage() );
                 e.printStackTrace(); // Log the stack trace for debugging
 
                 // Return a 500 Internal Server Error if an unexpected error occurs
@@ -92,27 +93,27 @@ public class AuthController {
         });
 
         get("/login", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /login" + RESET);
+            System.out.println("[AuthController] GET request received for /login" );
             res.redirect("/login.html");
             return null;
         });
 
         get("/register", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /register" + RESET);
+            System.out.println("[AuthController] GET request received for /register" );
             res.redirect("/register.html");
             return null;
         });
 
         get("/logout", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /logout" + RESET);
+            System.out.println("[AuthController] GET request received for /logout" );
             req.session().invalidate();
             res.redirect("/index.html");
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "User logged out" + RESET);
+            System.out.println("[AuthController] User logged out" );
             return null;
         });
 
         get("/builder", (req, res) ->{
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "GET request received for /builder" + RESET);
+            System.out.println("[AuthController] GET request received for /builder" );
             res.redirect("/builder.html");
             return null;
         });
@@ -142,7 +143,7 @@ public class AuthController {
         });
 
         post("/api/auth/login", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "POST request received for /api/auth/login" + RESET);
+            System.out.println("[AuthController] POST request received for /api/auth/login" );
             try {
                 // Read the request body as a Map to handle "email" directly
                 Map<String, String> loginData = jackson.readValue(req.body(), Map.class);
@@ -159,12 +160,12 @@ public class AuthController {
                 String email = loginData.get("email");
                 String password = loginData.get("password");
 
-                System.out.println(INFO + "[AuthController] " + NEUTRAL + "Login attempt for email: " + VARIABLE + email + RESET);
+                System.out.println("[AuthController] Login attempt for email: "  + email );
 
                 // Find by username, which is stored as the email from registration
                 Optional<Usuario> opt = dao.findByEmail(email); // Assuming findByUsername now searches by email
                 if (opt.isEmpty()) {
-                    System.out.println(ERROR + "[AuthController] " + NEUTRAL + "User not found with email: " + VARIABLE + email + RESET);
+                    System.out.println("[AuthController] User not found with email: " + email );
                     res.status(401);
                     return jackson.writeValueAsString(Map.of("success", false, "message", "Invalid credentials"));
                 }
@@ -179,15 +180,15 @@ public class AuthController {
                     dao.update(usuario); // Consider if you need to update anything on login (e.g., last login time)
                     req.session().attribute("usuario", usuario);
                     res.status(200);
-                    System.out.println(SUCCESS + "[AuthController] " + NEUTRAL + "User logged in successfully: " + VARIABLE + usuario.getNombreUsuario() + RESET);
+                    System.out.println("[AuthController] User logged in successfully: " + usuario.getNombreUsuario() );
                     return jackson.writeValueAsString(Map.of("success", true, "user", usuario));
                 } else {
                     res.status(401);
-                    System.out.println(ERROR + "[AuthController] " + NEUTRAL + "Invalid password for email: " + VARIABLE + email + RESET);
+                    System.out.println("[AuthController] Invalid password for email: " + email );
                     return jackson.writeValueAsString(Map.of("success", false, "message", "Invalid credentials"));
                 }
             } catch (Exception e) {
-                System.err.println(ERROR + "[AuthController] " + NEUTRAL + "Login error: " + e.getMessage() + RESET);
+                System.err.println("[AuthController] Login error: " + e.getMessage() );
                 e.printStackTrace();
                 res.status(500);
                 return jackson.writeValueAsString(Map.of("success", false, "message", "Internal server error"));
@@ -195,7 +196,7 @@ public class AuthController {
         });
 
         post("/api/auth/register", (req, res) -> {
-            System.out.println(INFO + "[AuthController] " + NEUTRAL + "POST request received for /api/auth/register" + RESET);
+            System.out.println("[AuthController] POST request received for /api/auth/register" );
             try {
                 // Leer como Map en lugar de Usuario para mayor flexibilidad
                 Map<String, String> data = jackson.readValue(req.body(), Map.class);
@@ -231,11 +232,11 @@ public class AuthController {
 
                 dao.create(nuevoUsuario);
                 res.status(201);
-                System.out.println(SUCCESS + "[AuthController] " + NEUTRAL + "New user registered: " + VARIABLE + nuevoUsuario.getCorreo() + RESET);
+                System.out.println("[AuthController] New user registered: " + nuevoUsuario.getCorreo() );
                 return jackson.writeValueAsString(Map.of("success", true));
 
             } catch (Exception e) {
-                System.out.println(ERROR + "[AuthController] User failed to register: " + e.getMessage() + RESET);
+                System.out.println("[AuthController] User failed to register: " + e.getMessage() );
                 e.printStackTrace();
                 res.status(400);
                 return jackson.writeValueAsString(Map.of(

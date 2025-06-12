@@ -21,7 +21,7 @@ public class PulseraDAO {
     public PulseraDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp");
         col = db.getCollection("pulseras");
-        System.out.println("Successfully initialized connection to 'pulseras' collection.");
+        System.out.println("[PulseraDAO] Successfully initialized connection to 'pulseras' collection.");
     }
 
     private Pulsera docToPulsera(Document d) {

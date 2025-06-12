@@ -6,7 +6,6 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
 
-import static com.example.app.constants.ColorCodes.*;
 
 import org.bson.Document;
 
@@ -15,7 +14,7 @@ import java.util.Arrays;
 public class DBInit {
 
     public static void createTestDatabase() {
-        System.out.println(INFO + "Creating test database with sample data..." + RESET);
+        System.out.println("[DBInit] Creating test database with sample data..." );
 
         // Use localhost or fallback test URI
         try (MongoClient client = MongoClients.create("mongodb://localhost:27017")) {
@@ -37,10 +36,10 @@ public class DBInit {
                             .append("role", "user")
             ));
 
-            System.out.println(SUCCESS + "Test database created successfully." + RESET);
+            System.out.println("[DBInit] Test database created successfully." );
 
         } catch (Exception e) {
-            System.out.println(ERROR + "Failed to create test database: " + VARIABLE + e.getMessage() + RESET);
+            System.out.println("[DBInit] Failed to create test database: "  + e.getMessage() );
             e.printStackTrace();
         }
     }

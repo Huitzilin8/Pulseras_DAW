@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSpinner.classList.remove('d-none');
 
         try {
-            const response = await fetch('/api/user/pulseras/design', {
+            const response = await fetch('/api/usuario/pulseras/design', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

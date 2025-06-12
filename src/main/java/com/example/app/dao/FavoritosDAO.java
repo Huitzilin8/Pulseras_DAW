@@ -20,7 +20,7 @@ public class FavoritosDAO {
     public FavoritosDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp");
         col = db.getCollection("favoritos");
-        System.out.println("Successfully initialized connection to 'favoritos' collection.");
+        System.out.println("[FavoritosDAO] Successfully initialized connection to 'favoritos' collection.");
     }
 
     private Favoritos docToFavoritos(Document d) {

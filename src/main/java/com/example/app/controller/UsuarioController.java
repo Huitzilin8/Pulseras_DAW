@@ -142,12 +142,8 @@ public class UsuarioController {
         get("/api/usuario/profile/favoritos", (req, res) -> {
             res.type("application/json");
 
-            // 1. Verificar autenticación
+            // 1. Guardar usuario
             Usuario currentUser = req.session().attribute("usuario");
-            if (currentUser == null) {
-                halt(401, jackson.writeValueAsString(Map.of("error", "Unauthorized: Please log in")));
-            }
-
             try {
                 // 2. Obtener usuario actualizado desde la base de datos
                 Optional<Usuario> userOpt = usuarioDao.findById(currentUser.getId());
@@ -156,15 +152,6 @@ public class UsuarioController {
                 }
                 currentUser = userOpt.get();
 
-                // --- Crucial logging here ---
-                System.out.println("--- After DB Fetch ---");
-                System.out.println("Retrieved User ID: " + currentUser.getId());
-                System.out.println("Retrieved User Name: " + currentUser.getNombreUsuario()); // Sanity check
-                System.out.println("Retrieved Favoritos IDs: " + currentUser.getFavoritosId());
-                System.out.println("Is Favoritos IDs list null? " + (currentUser.getFavoritosId() == null));
-                System.out.println("Is Favoritos IDs list empty? " + (currentUser.getFavoritosId() != null && currentUser.getFavoritosId().isEmpty()));
-                System.out.println("----------------------");
-
                 // 3. Obtener la lista de IDs de pulseras favoritas
                 List<ObjectId> pulseraIds = currentUser.getFavoritosId();
 
@@ -172,18 +159,10 @@ public class UsuarioController {
                 if (pulseraIds == null || pulseraIds.isEmpty()) {
                     return jackson.writeValueAsString(Collections.emptyList());
                 }
-                // --- NEW CRUCIAL LOGGING ---
-                System.out.println("--- Before pulseraDao.findByIds() ---");
-                System.out.println("Passing pulseraIds to DAO: " + pulseraIds);
-                System.out.println("------------------------------------");
 
                 // 5. Buscar las pulseras correspondientes
                 List<Pulsera> pulseras = pulseraDao.findByIds(pulseraIds);
-                System.out.println("--- After pulseraDao.findByIds() ---");
-                System.out.println("Result from pulseraDao.findByIds(): " + pulseras);
-                System.out.println("Number of Pulseras found by DAO: " + (pulseras != null ? pulseras.size() : "null (or no results)"));
-                System.out.println("------------------------------------");
-                // --- END NEW CRUCIAL LOGGING ---
+
                 // 6. Devolver las pulseras encontradas (puede ser menos si algunas IDs son inválidas)
                 return jackson.writeValueAsString(pulseras != null ? pulseras : Collections.emptyList());
 

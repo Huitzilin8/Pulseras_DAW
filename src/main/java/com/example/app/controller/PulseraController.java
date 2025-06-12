@@ -63,17 +63,17 @@ public class PulseraController {
         if (!uploadDir.exists()) {
             try {
                 Files.createDirectories(uploadDir.toPath());
-                System.out.println("Created image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
+                System.out.println("[PulseraController] Created image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
             } catch (IOException e) {
-                System.out.println("Failed to create image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR+ e);
+                System.out.println("[PulseraController] Failed to create image upload directory: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR+ e);
                 // Si el directorio no se puede crear, es un error crítico.
                 // Podrías lanzar una RuntimeException o manejarlo de otra forma.
                 throw new RuntimeException("Failed to initialize image upload directory", e);
             }
         } else {
-            System.out.println("Image upload directory already exists: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
+            System.out.println("[PulseraController] Image upload directory already exists: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
         }
-        System.out.println("Image upload path initialized to: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
+        System.out.println("[PulseraController] Image upload path initialized to: {}"+ this.ABSOLUTE_IMG_UPLOAD_DIR);
     }
 
     public void registerRoutes() {
@@ -125,7 +125,7 @@ public class PulseraController {
         // === USER-SPECIFIC ROUTE ===
 
         // POST a new custom design
-        post("/api/user/pulseras/design", (req, res) -> {
+        post("/api/usuario/pulseras/design", (req, res) -> {
             res.type("application/json");
 
             // 1. Authentication: Ensure user is logged in
@@ -229,12 +229,12 @@ public class PulseraController {
                     IOUtils.copy(is, res.raw().getOutputStream());
                     return res.raw();
                 } catch (IOException e) {
-                    System.out.println("Error serving image " + filename + ": "+ e.getMessage());
+                    System.out.println("[PulseraController] Error serving image " + filename + ": "+ e.getMessage());
                     res.status(500);
                     return "Internal server error: Could not serve image.";
                 }
             } else {
-                System.out.println("Image file not found: " + filename);
+                System.out.println("[PulseraController] Image file not found: " + filename);
                 res.status(404);
                 return "Image not found.";
             }
@@ -285,7 +285,7 @@ public class PulseraController {
                 res.status(400);
                 return jackson.writeValueAsString(Map.of("error", "Formato de ID de pulsera inválido."));
             } catch (Exception e) {
-                System.out.println("Error al alternar favorito: " + e.getMessage());
+                System.out.println("[PulseraController] Error al alternar favorito: " + e.getMessage());
                 res.status(500);
                 return jackson.writeValueAsString(Map.of("error", "Ocurrió un error interno al actualizar favoritos."));
             } finally {
@@ -297,7 +297,7 @@ public class PulseraController {
 
         // POST endpoint for image upload
         post("/api/admin/upload/img", (req, res) -> {
-            System.out.println("Attempting to upload a picture...");
+            System.out.println("[PulseraController] Attempting to upload a picture...");
             try {
                 // Especifica el directorio de subida (ABSOLUTE_IMG_UPLOAD_DIR),
                 // límites de tamaño y que se almacene en disco.
@@ -316,11 +316,11 @@ public class PulseraController {
                 }
 
                 res.type("application/json");
-                System.out.println("Image uploaded successfully: {}"+fileName);
+                System.out.println("[PulseraController] Image uploaded successfully: {}"+fileName);
                 return jackson.writeValueAsString(Map.of("filename", fileName));
 
             } catch (Exception e) {
-                System.out.println("Error during image upload"+ e); // Usa logger para un mejor manejo de logs
+                System.out.println("[PulseraController] Error during image upload"+ e); // Usa logger para un mejor manejo de logs
                 res.status(500);
                 return jackson.writeValueAsString(Map.of("error", "Image upload failed", "details", e.getMessage()));
             }

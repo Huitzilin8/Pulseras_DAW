@@ -28,7 +28,7 @@ public class MaterialDAO {
     public MaterialDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp"); // Assumes the same database "myapp"
         col = db.getCollection("materiales"); // Collection for Material objects
-        System.out.println("Successfully initialized connection to 'materiales' collection.");
+        System.out.println("[MaterialDAO] [MaterialDAO] Successfully initialized connection to 'materiales' collection.");
     }
 
     /**
@@ -54,7 +54,7 @@ public class MaterialDAO {
      * @param m The Material object to create.
      */
     public void create(Material m) {
-        System.out.println("Trying to create new material: " + m.getNombre());
+        System.out.println("[MaterialDAO] Trying to create new material: " + m.getNombre());
         Document d = new Document()
                 .append("nombre", m.getNombre()) //
                 .append("descripcion", m.getDescripcion()) //
@@ -66,7 +66,7 @@ public class MaterialDAO {
         col.insertOne(d);
         // Set the generated ObjectId back into the material object
         m.setId(d.getObjectId("_id"));
-        System.out.println("Material created: " + m.getNombre() + " (ID: " + m.getId().toHexString() + ")");
+        System.out.println("[MaterialDAO] Material created: " + m.getNombre() + " (ID: " + m.getId().toHexString() + ")");
     }
 
     /**
@@ -75,14 +75,14 @@ public class MaterialDAO {
      * @return An Optional containing the found Material, or empty if not found.
      */
     public Optional<Material> findById(ObjectId id) {
-        System.out.println("Searching for material with ID: " + id.toHexString());
+        System.out.println("[MaterialDAO] Searching for material with ID: " + id.toHexString());
         Document d = col.find(eq("_id", id)).first();
         if (d == null) {
-            System.out.println("Material with ID " + id.toHexString() + " not found.");
+            System.out.println("[MaterialDAO] Material with ID " + id.toHexString() + " not found.");
             return Optional.empty();
         }
         Material material = docToMaterial(d);
-        System.out.println("Material found by ID: " + id.toHexString() + " (Name: " + material.getNombre() + ")");
+        System.out.println("[MaterialDAO] Material found by ID: " + id.toHexString() + " (Name: " + material.getNombre() + ")");
         return Optional.of(material);
     }
 
@@ -91,10 +91,10 @@ public class MaterialDAO {
      * @return A List of all Material objects.
      */
     public List<Material> listAll() {
-        System.out.println("Listing all materials.");
+        System.out.println("[MaterialDAO] Listing all materials.");
         List<Material> list = new ArrayList<>();
         col.find().forEach(d -> list.add(docToMaterial(d)));
-        System.out.println("Retrieved " + list.size() + " materials.");
+        System.out.println("[MaterialDAO] Retrieved " + list.size() + " materials.");
         return list;
     }
 
@@ -103,7 +103,7 @@ public class MaterialDAO {
      * @param m The Material object with updated information.
      */
     public void update(Material m) {
-        System.out.println("Updating material with ID: " + m.getId().toHexString());
+        System.out.println("[MaterialDAO] Updating material with ID: " + m.getId().toHexString());
         col.updateOne(eq("_id", m.getId()),
                 new Document("$set", new Document()
                         .append("nombre", m.getNombre())
@@ -115,7 +115,7 @@ public class MaterialDAO {
                         .append("rutaImagen", m.getRutaImagen())
                 )
         );
-        System.out.println("Material with ID " + m.getId().toHexString() + " updated.");
+        System.out.println("[MaterialDAO] Material with ID " + m.getId().toHexString() + " updated.");
     }
 
     /**
@@ -123,8 +123,8 @@ public class MaterialDAO {
      * @param id The ObjectId of the material to delete.
      */
     public void delete(ObjectId id) {
-        System.out.println("Deleting material with ID: " + id.toHexString());
+        System.out.println("[MaterialDAO] Deleting material with ID: " + id.toHexString());
         col.deleteOne(eq("_id", id));
-        System.out.println("Material with ID " + id.toHexString() + " deleted.");
+        System.out.println("[MaterialDAO] Material with ID " + id.toHexString() + " deleted.");
     }
 }

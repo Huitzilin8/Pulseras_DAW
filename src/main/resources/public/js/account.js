@@ -219,11 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`/api/usuario/profile/favoritos/${pulseraId}`, {
-                    method: 'DELETE'
+                const response = await fetch(`api/usuario/pulseras/${pulseraId}/favorito`, {
+                    method: 'PUT'
                 });
 
-                if (response.status === 204) { // 204 No Content is standard for successful DELETE
+                if (response.status === 200) { // 204 No Content is standard for successful DELETE
                     showAlert('success', 'Pulsera eliminada de favoritos correctamente.');
                     loadFavorites(); // Reload the list to reflect the change
                 } else if (!response.ok) {

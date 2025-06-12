@@ -4,8 +4,6 @@ package com.example.app;
 import com.example.app.controller.*;
 import com.example.app.dao.*;
 
-import static com.example.app.constants.ColorCodes.*;
-
 import com.example.app.db.DBInit;
 
 
@@ -32,7 +30,7 @@ public class App {
             db.listCollectionNames().first(); // Will throw if fails
 
             // If we got here, connection is fine
-            System.out.println(INFO + "[App.java] " + SUCCESS + "MongoDB connected successfully." + RESET);
+            System.out.println("[App.java] MongoDB connected successfully.");
 
             // Initialize DAO and routes
             UsuarioDAO userDao = new UsuarioDAO(client);
@@ -47,24 +45,13 @@ public class App {
             MaterialDAO materialDao = new MaterialDAO(client);
             new MaterialController(materialDao).registerRoutes();
 
-            ChatDAO chatDao = new ChatDAO(client);
-            MensajeDAO mensajeDao = new MensajeDAO(client);
-            new ChatController(chatDao, mensajeDao, userDao).registerRoutes();
-
-            VentasDAO ventDao = new VentasDAO(client);
-            new VentasController(ventDao, pulseraDAO).registerRoutes();
-
-            ColorDAO colorDao = new ColorDAO(client);
-            new ColorController(colorDao).registerRoutes();
-
-
             new PulseraController(pulseraDAO, userDao, buildDao, materialDao).registerRoutes();
 
         } catch (MongoException e) {
-            System.out.println(INFO + "[App.java] " + ERROR + "DB connection failed: " + VARIABLE + e.getMessage() + RESET);
+            System.out.println("[App.java] DB connection failed: " + e.getMessage() );
             DBInit.createTestDatabase();  // This must not require a working client
         } catch (Exception e) {
-            System.out.println(INFO + "[App.java] " + ERROR + "Unexpected error: " + e.getMessage() + RESET);
+            System.out.println("[App.java] Unexpected error: " + e.getMessage());
             e.printStackTrace();
         }
     }

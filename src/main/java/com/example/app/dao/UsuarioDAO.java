@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.example.app.constants.ColorCodes.*;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 
@@ -31,7 +30,7 @@ public class UsuarioDAO {
     public UsuarioDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp"); // Assuming the same database "myapp"
         col = db.getCollection("usuarios"); // Collection for Usuario objects
-        System.out.println("Successfully initialized connection to 'usuarios' collection.");
+        System.out.println("[UsuarioDAO] Successfully initialized connection to 'usuarios' collection.");
     }
 
     /**
@@ -59,7 +58,7 @@ public class UsuarioDAO {
      * @param u The Usuario object to create.
      */
     public void create(Usuario u) {
-        System.out.println(INFO + "[UsuarioDAO] Trying to create new user: " + u.getNombreUsuario() + RESET);
+        System.out.println("[UsuarioDAO] Trying to create new user: " + u.getNombreUsuario() );
         Document d = new Document()
                 .append("nombreUsuario", u.getNombreUsuario())
                 .append("hashContrasena", u.getHashContrasena())
@@ -70,7 +69,7 @@ public class UsuarioDAO {
         col.insertOne(d);
         // Set the generated ObjectId back into the user object
         u.setId(d.getObjectId("_id"));
-        System.out.println(SUCCESS + "[UsuarioDAO]" + INFO + " User created: " + VARIABLE + u.getNombreUsuario() + INFO + " (ID: " + VARIABLE + u.getId().toHexString() + INFO +")");
+        System.out.println("[UsuarioDAO] User created: " + u.getNombreUsuario() + " (ID: " + u.getId().toHexString() + ")");
     }
 
     /**
@@ -113,14 +112,14 @@ public class UsuarioDAO {
      * @return An Optional containing the found Usuario, or empty if not found.
      */
     public Optional<Usuario> findByEmail(String email) {
-        System.out.println(INFO + "[UserDAO] " + NEUTRAL + "Searching for user with ID: " + VARIABLE + email + RESET);
+        System.out.println("[UserDAO] Searching for user with ID: " + email );
         Document d = col.find(eq("correo", email)).first();
         if (d == null) {
-            System.out.println(INFO + "[UserDAO] " + NEUTRAL + "User with email " + VARIABLE + email + NEUTRAL + " not found." + RESET);
+            System.out.println("[UserDAO] User with email " + email + " not found." );
             return Optional.empty();
         }
         Usuario usuario = docToUsuario(d);
-        System.out.println(INFO + "[UserDAO] " + SUCCESS + "User found by email: " + VARIABLE + email + " (Username: " + usuario.getNombreUsuario() + ")" + RESET);
+        System.out.println("[UserDAO] User found by email: " + email + " (Username: " + usuario.getNombreUsuario() + ")" );
         return Optional.of(usuario);
     }
 
@@ -170,8 +169,8 @@ public class UsuarioDAO {
      * @param id The ObjectId of the user to delete.
      */
     public void delete(ObjectId id) {
-        System.out.println("Deleting user with ID: " + id.toHexString());
+        System.out.println("[UsuarioDAO] Deleting user with ID: " + id.toHexString());
         col.deleteOne(eq("_id", id));
-        System.out.println("User with ID " + id.toHexString() + " deleted.");
+        System.out.println("[UsuarioDAO] User with ID " + id.toHexString() + " deleted.");
     }
 }
