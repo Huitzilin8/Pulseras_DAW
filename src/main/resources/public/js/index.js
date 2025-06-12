@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let allBracelets = [];
     let filteredBracelets = [];
 
-    // Cargar pulseras al iniciar
+    // Cargar pulseras al inici ar
     fetchBracelets();
 
     // Event listeners
@@ -111,7 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        galleryContainer.innerHTML = filteredBracelets.map(bracelet => `
+        // Wrap the mapped bracelets in a 'row' div
+        galleryContainer.innerHTML = `<div class="row">` + filteredBracelets.map(bracelet => `
             <div class="col-md-4 col-lg-4 mb-4">
                 <div class="card h-100">
                     <img src="${bracelet.imgURL}"
@@ -126,11 +127,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="card-footer bg-white border-top-0">
                         <button class="btn btn-sm btn-outline-primary toggle-favorite" data-id="${bracelet.id}">
                             <i class="bi ${bracelet.favorito ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
-                        </button
+                        </button>
                     </div>
                 </div>
             </div>
-        `).join("");
+        `).join("") + `</div>`; // Close the 'row' div
 
         // Añadir event listeners a los botones
         document.querySelectorAll(".toggle-favorite").forEach(btn => {
