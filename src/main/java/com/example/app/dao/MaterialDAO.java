@@ -28,7 +28,7 @@ public class MaterialDAO {
     public MaterialDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp"); // Assumes the same database "myapp"
         col = db.getCollection("materiales"); // Collection for Material objects
-        System.out.println("[MaterialDAO] [MaterialDAO] Successfully initialized connection to 'materiales' collection.");
+        System.out.println("[MaterialDAO] Successfully initialized connection to 'materiales' collection.");
     }
 
     /**

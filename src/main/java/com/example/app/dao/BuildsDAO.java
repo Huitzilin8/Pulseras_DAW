@@ -30,7 +30,7 @@ public class BuildsDAO {
     public BuildsDAO(MongoClient client) {
         MongoDatabase db = client.getDatabase("myapp");
         col = db.getCollection("builds");
-        System.out.println("[BuildsDAO] [BuildsDAO] Successfully initialized connection to 'builds' collection.");
+        System.out.println("[BuildsDAO] Successfully initialized connection to 'builds' collection.");
     }
 
     /**
